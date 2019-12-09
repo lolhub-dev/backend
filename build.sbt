@@ -1,4 +1,4 @@
-name := "akka-quickstart-scala"
+name := "lolhub"
 
 version := "1.0"
 
