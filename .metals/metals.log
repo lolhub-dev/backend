@@ -48,3 +48,8 @@ WARN  no build target: /home/daniel/Documents/projects/lolhub/backend/src/main/s
 WARN  code navigation does not work for the file '/home/daniel/Documents/projects/lolhub/backend/src/main/scala/lolhub/main.scala' because it doesn't belong to a build target.
 WARN  code navigation does not work for the file '/home/daniel/Documents/projects/lolhub/backend/src/main/scala/lolhub/main.scala' because it doesn't belong to a build target.
 INFO  shutting down Metals
+INFO  time: initialize in 0.54s
+INFO  skipping build import with status 'Requested'
+WARN  no build target: /home/danielg/programming/lolhub/backend/build.sbt
+WARN  no build target: /home/danielg/programming/lolhub/backend/build.sbt
+WARN  no build target: 
