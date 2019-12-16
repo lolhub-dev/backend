@@ -1,6 +1,6 @@
 module Main where
 
-import Lib
+import           Lolhub.Lib
 
 main :: IO ()
 main = someFunc

@@ -1,6 +1,7 @@
-module Lib
+module Lolhub.Lib
     ( someFunc
-    ) where
+    )
+where
 
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"
