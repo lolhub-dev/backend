@@ -65,4 +65,4 @@ packages:
 # Allow a newer minor version of GHC than the snapshot specifies
 # compiler-check: newer-minor
 extra-deps:
-  - morpheus-graphql-0.6.2
+  - morpheus-graphql-0.8.0
