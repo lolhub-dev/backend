@@ -21,6 +21,9 @@ description:         Please see the README on GitHub at <https://github.com/lolh
 
 dependencies:
 - base >= 4.7 && < 5
+- text
+- bytestring
+- morpheus-graphql
 
 library:
   source-dirs: src
@@ -35,6 +38,7 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - backend
+    - scotty
 
 tests:
   backend-test:
