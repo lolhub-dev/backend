@@ -5,12 +5,12 @@
 
 packages:
 - completed:
-    hackage: morpheus-graphql-0.8.0@sha256:4971cec4de9c5e49b9b2c82e371ceae0579b7a5a9fa6c81f3df81856e8cc4dde,24172
+    hackage: morpheus-graphql-0.6.2@sha256:10f85311c04af4a67526d36e899d154ff5dd01ff619282f024b44f6dd63e0817,20460
     pantry-tree:
-      size: 35408
-      sha256: 94a33bcbaa593e93f871399ea792d0f1faacd005dccfa9eba1f67229e80e9fd9
+      size: 29883
+      sha256: 459da4efe4ae4688a60ec2aa960f3f35754ab234a7d34b9f5538fc0eaa6e3970
   original:
-    hackage: morpheus-graphql-0.8.0
+    hackage: morpheus-graphql-0.6.2
 snapshots:
 - completed:
     size: 524789

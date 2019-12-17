@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 6de2d9682f490df27d4016e10ad4722e1706f71c6e52543c5927904f78f161a0
+-- hash: 613ba5c31b1ea3fd4ab2ef4ac3b05fbd6d1c139e64d11686bc60ed292c1cbd30
 
 name:           backend
 version:        0.1.0.0
@@ -28,7 +28,6 @@ source-repository head
 library
   exposed-modules:
       Lolhub.Connection.API
-      Lolhub.Lib
   other-modules:
       Paths_backend
   hs-source-dirs:
