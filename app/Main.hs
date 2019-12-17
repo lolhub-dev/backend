@@ -1,6 +1,9 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Main where
 
-import           Lolhub.Lib
+
+import           Lolhub.Connection.API
+import           Web.Scotty
 
 main :: IO ()
-main = someFunc
+main = scotty 3000 $ post "/api" $ raw =<< (liftIO . gqlApi =<< body)
