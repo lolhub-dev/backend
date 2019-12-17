@@ -9,7 +9,7 @@
 {-# LANGUAGE TypeFamilies          #-}
 
 module Lolhub.Connection.API
-  ( api
+  ( gqlApi
   )
 where
 
@@ -19,11 +19,11 @@ import           Data.Morpheus                  ( interpreter )
 import           Data.Morpheus.Document         ( importGQLDocumentWithNamespace
                                                 )
 import           Data.Morpheus.Types            ( GQLRootResolver(..)
-                                                , IORes
+                                                , Undefined(..)
                                                 )
 import           Data.Text                      ( Text )
 
-importGQLDocumentWithNamespace "schema.gql"
+importGQLDocumentWithNamespace "src/schema.gql"
 
 rootResolver :: GQLRootResolver IO () Query Undefined Undefined
 rootResolver = GQLRootResolver { queryResolver        = Query { queryDeity }
@@ -38,5 +38,5 @@ rootResolver = GQLRootResolver { queryResolver        = Query { queryDeity }
     deityName _ = pure "Morpheus"
     deityPower _ = pure (Just "Shapeshifting")
 
-api :: ByteString -> IO ByteString
-api = interpreter rootResolver
+gqlApi :: B.ByteString -> IO B.ByteString
+gqlApi = interpreter rootResolver
