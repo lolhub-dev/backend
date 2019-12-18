@@ -1,8 +1,9 @@
-type Query {
-  deity(name: String!): Deity!
+type User {
+	name: String!
+	email: String!
 }
 
-type Deity {
-  name: String!
-  power: String
+type Query {
+	user: User!
+	helloWorld: String!
 }
