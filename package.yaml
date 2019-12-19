@@ -24,6 +24,7 @@ dependencies:
 - text
 - bytestring
 - morpheus-graphql
+- mtl
 
 library:
   source-dirs: src

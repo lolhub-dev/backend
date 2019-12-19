@@ -10,12 +10,13 @@
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
 
-module Lolhub.Connection.API
-  ( gqlApi
-  , EVENT
+module Lolhub.Connection.Graphql.UserApi
+  ( userApi
+  , USEREVENT
   )
 where
 
+import           Control.Monad.Trans            ( lift )
 import qualified Data.ByteString.Lazy.Char8    as B
 
 import           Data.Morpheus                  ( interpreter )
@@ -27,49 +28,62 @@ import           Data.Morpheus.Types            ( GQLRootResolver(..)
                                                 , ResolveM
                                                 , ResolveS
                                                 , IORes
+                                                , IOMutRes
                                                 , Event(..)
                                                 , constRes
                                                 , liftEither
                                                 )
 import           Data.Text                      ( Text )
 
-importGQLDocumentWithNamespace "src/schema.gql"
+importGQLDocumentWithNamespace "src/Lolhub/Connection/Graphql/UserApi.gql"
+
 
 data Channel = USER | ADDRESS
   deriving (Show, Eq, Ord)
 
 newtype Content = Content { contentID :: Int  }
 
-type EVENT = (Event Channel Content)
+type USEREVENT = (Event Channel Content)
 
-gqlApi :: B.ByteString -> IO B.ByteString
-gqlApi = interpreter gqlRoot
+userApi :: B.ByteString -> IO B.ByteString
+userApi = interpreter userGqlRoot
 
-gqlRoot :: GQLRootResolver IO EVENT Query Undefined Undefined
-gqlRoot = GQLRootResolver { queryResolver
-                          , mutationResolver
-                          , subscriptionResolver
-                          }
+userGqlRoot :: GQLRootResolver IO USEREVENT Query Mutation Undefined
+userGqlRoot = GQLRootResolver { queryResolver
+                              , mutationResolver
+                              , subscriptionResolver
+                              }
  where
   queryResolver =
-    Query { queryUser = resolveUser, queryHelloWorld = resolveHelloWorld }
+    Query { queryLogin = loginUser, queryHelloWorld = resolveHelloWorld }
   -------------------------------------------------------------
-  mutationResolver     = Undefined
+  mutationResolver     = Mutation { mutationRegister = registerUser }
   subscriptionResolver = Undefined
 
 
 ----- QUERY RESOLVERS -----
 
-resolveUser :: () -> ResolveQ EVENT IO User
-resolveUser _args = liftEither (getDBUser (Content 2))
+loginUser :: QueryLoginArgs -> ResolveQ USEREVENT IO User
+loginUser _args = liftEither (getDBUser (Content 2))
 
-resolveHelloWorld :: () -> IORes EVENT Text
+resolveHelloWorld :: () -> IORes USEREVENT Text
 resolveHelloWorld = constRes "helloWorld"
 
-getDBUser :: Content -> IO (Either String (User (IORes EVENT)))
+----- MUTATION RESOLVERS
+registerUser :: MutationRegisterArgs -> ResolveM USEREVENT IO User
+registerUser _args = lift setDBUser
+
+
+
+getDBUser :: Content -> IO (Either String (User (IORes USEREVENT)))
 getDBUser _ = do
   Person { name, email } <- dbPerson
-  pure $ Right User { userName = constRes name, userEmail = constRes email }
+  return $ Right User { userName = constRes name, userEmail = constRes email }
+
+setDBUser :: IO (User (IOMutRes USEREVENT))
+setDBUser = do
+  Person { name, email } <- dbPerson
+  return User { userName = constRes name, userEmail = constRes email }
 
 data Person = Person {
   name :: Text,
@@ -77,4 +91,4 @@ data Person = Person {
 }
 
 dbPerson :: IO Person
-dbPerson = pure Person { name = "George", email = "George@email.com" }
+dbPerson = return Person { name = "George", email = "George@email.com" }
