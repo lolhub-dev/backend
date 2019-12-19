@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 613ba5c31b1ea3fd4ab2ef4ac3b05fbd6d1c139e64d11686bc60ed292c1cbd30
+-- hash: df509c5f14ce1ff71409cf1632075692fe80d5f9407efec3983ba35e368747d7
 
 name:           backend
 version:        0.1.0.0
@@ -27,7 +27,7 @@ source-repository head
 
 library
   exposed-modules:
-      Lolhub.Connection.API
+      Lolhub.Connection.Graphql.UserApi
   other-modules:
       Paths_backend
   hs-source-dirs:
@@ -36,6 +36,7 @@ library
       base >=4.7 && <5
     , bytestring
     , morpheus-graphql
+    , mtl
     , text
   default-language: Haskell2010
 
@@ -51,6 +52,7 @@ executable backend-exe
     , base >=4.7 && <5
     , bytestring
     , morpheus-graphql
+    , mtl
     , scotty
     , text
   default-language: Haskell2010
@@ -70,5 +72,6 @@ test-suite backend-test
     , bytestring
     , hspec
     , morpheus-graphql
+    , mtl
     , text
   default-language: Haskell2010
