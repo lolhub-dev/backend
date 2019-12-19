@@ -5,12 +5,12 @@ type UnverifiedUser  {
 }
 
 type Query {
-	login(
-	username: String!
-	, password: String!): UnverifiedUser!
 	helloWorld: String!
 }
 
 type Mutation {
 	register(email: String!, password: String!): UnverifiedUser!
+	login(
+	username: String!
+	, password: String!): UnverifiedUser!
 }

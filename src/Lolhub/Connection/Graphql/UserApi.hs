@@ -38,34 +38,39 @@ userGqlRoot :: GQLRootResolver IO USEREVENT Query Mutation Undefined
 userGqlRoot =
   GQLRootResolver { queryResolver, mutationResolver, subscriptionResolver }
   where
-    queryResolver =
-      Query { queryLogin = loginUser, queryHelloWorld = resolveHelloWorld }
+    queryResolver = Query { queryHelloWorld = resolveHelloWorld }
 
     -------------------------------------------------------------
-    mutationResolver = Mutation { mutationRegister = registerUser }
+    mutationResolver =
+      Mutation { mutationLogin = loginUser, mutationRegister = registerUser }
 
     subscriptionResolver = Undefined
 
 ----- QUERY RESOLVERS -----
-loginUser :: QueryLoginArgs -> ResolveQ USEREVENT IO UnverifiedUser
-loginUser _args = liftEither (getDBUser (Content 2))
+loginUser :: MutationLoginArgs -> ResolveM USEREVENT IO UnverifiedUser
+loginUser
+  MutationLoginArgs { mutationLoginArgsUsername, mutationLoginArgsPassword } =
+  liftEither (getDBUser mutationLoginArgsUsername)
 
 resolveHelloWorld :: () -> IORes USEREVENT Text
 resolveHelloWorld = constRes "helloWorld"
 
------ MUTATION RESOLVERS
+----- MUTATION RESOLVERS -----
 registerUser :: MutationRegisterArgs -> ResolveM USEREVENT IO UnverifiedUser
 registerUser _args = lift setDBUser
 
-getDBUser :: Content -> IO (Either String (UnverifiedUser (IORes USEREVENT)))
-getDBUser _ = do
+----- STUB DB -----
+getDBUser :: Text -> IO (Either String (UnverifiedUser (IOMutRes USEREVENT)))
+getDBUser uname = do
   UnverifiedPerson { name, surname, email } <- dbPerson
   return
-    $ Right
-      UnverifiedUser { unverifiedUserName = constRes name
-                     , unverifiedUserEmail = constRes email
-                     , unverifiedUserSurname = constRes surname
-                     }
+    $ if uname == "test"
+      then Right
+        UnverifiedUser { unverifiedUserName = constRes name
+                       , unverifiedUserEmail = constRes email
+                       , unverifiedUserSurname = constRes surname
+                       }
+      else Left "No such user"
 
 setDBUser :: IO (UnverifiedUser (IOMutRes USEREVENT))
 setDBUser = do
