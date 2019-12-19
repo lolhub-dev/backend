@@ -16,9 +16,9 @@ import           Control.Monad.Trans (lift)
 import qualified Data.ByteString.Lazy.Char8 as B
 import           Data.Morpheus (interpreter)
 import           Data.Morpheus.Document (importGQLDocumentWithNamespace)
-import           Data.Morpheus.Types (GQLRootResolver(..), Undefined(..)
-                                    , ResolveQ, ResolveM, ResolveS, IORes
-                                    , IOMutRes, Event(..), constRes, liftEither)
+import           Data.Morpheus.Types (Event(..), GQLRootResolver(..), IOMutRes
+                                    , IORes, ResolveM, ResolveQ, ResolveS
+                                    , Undefined(..), constRes, liftEither)
 import           Data.Text (Text)
 
 importGQLDocumentWithNamespace "src/Lolhub/Connection/Graphql/UserApi.gql"
