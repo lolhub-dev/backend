@@ -1,15 +1,16 @@
-type User {
+type UnverifiedUser  {
 	name: String!
+	surname: String!
 	email: String!
 }
 
 type Query {
 	login(
 	username: String!
-	, password: String!): User!
+	, password: String!): UnverifiedUser!
 	helloWorld: String!
 }
 
 type Mutation {
-	register(email: String!, password: String!): User!
+	register(email: String!, password: String!): UnverifiedUser!
 }
