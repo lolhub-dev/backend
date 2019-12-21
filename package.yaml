@@ -24,7 +24,13 @@ dependencies:
 - text
 - bytestring
 - morpheus-graphql
-
+- mongoDB
+- mtl
+- unix
+- wai-extra
+- monadIO
+- bson-mapping
+- transformers
 library:
   source-dirs: src
 
