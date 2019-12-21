@@ -6,7 +6,6 @@ import           Lolhub.Connection.API
 import           Control.Monad.IO.Class
 import           Web.Scotty
 import           System.Exit
-import           System.Posix.Signals
 import           Control.Concurrent
 import           Network.Wai.Middleware.RequestLogger
 import           Database.MongoDB (Action, connect, host, access, master, close
@@ -27,14 +26,14 @@ hostName :: String
 hostName = "127.0.0.1"
 
 -- | runs the accumulated Actions 
-exampleActions :: Action IO ()
+exampleActions :: Action IO (Maybe User)
 exampleActions = do
   insertRes <- insertUser $ User "test" "test" "test" "test" "test"
   user <- getUser "test"
-  print user
-  invalidUser <- getUser "invalidUser";
-  print invalidUser
-  return ()
+  invalidUser <- getUser "invalidUser"
+  return $ putStrLn $ show user
+  return $ print invalidUser
+  return user
 
 main :: IO ()
 main = do
