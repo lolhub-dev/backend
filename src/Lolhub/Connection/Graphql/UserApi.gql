@@ -1,16 +1,39 @@
-type UnverifiedUser  {
+interface UserI {
 	name: String!
 	surname: String!
 	email: String!
 }
+
+type UnverifiedUser {
+	name: String!
+	surname: String!
+	email: String!
+}
+
+type VerifiedUser {
+	name: String!
+	surname: String!
+	email: String!
+	verifiedDate: Int!
+}
+
+type VerifiedSummoner {
+	name: String!
+	surname: String!
+	email: String!
+	verifiedDate: Int!
+	summonerName: String!
+}
+
+union User = UnverifiedUser | VerifiedUser | VerifiedSummoner
 
 type Query {
 	helloWorld: String!
 }
 
 type Mutation {
-	register(email: String!, password: String!): UnverifiedUser!
+	register(email: String!, password: String!): User!
 	login(
 	username: String!
-	, password: String!): UnverifiedUser!
+	, password: String!): User!
 }

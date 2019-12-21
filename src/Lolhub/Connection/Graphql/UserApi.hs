@@ -47,7 +47,7 @@ userGqlRoot =
     subscriptionResolver = Undefined
 
 ----- QUERY RESOLVERS -----
-loginUser :: MutationLoginArgs -> ResolveM USEREVENT IO UnverifiedUser
+loginUser :: MutationLoginArgs -> ResolveM USEREVENT IO User
 loginUser
   MutationLoginArgs { mutationLoginArgsUsername, mutationLoginArgsPassword } =
   liftEither (getDBUser mutationLoginArgsUsername)
@@ -60,7 +60,7 @@ registerUser :: MutationRegisterArgs -> ResolveM USEREVENT IO UnverifiedUser
 registerUser _args = lift setDBUser
 
 ----- STUB DB -----
-getDBUser :: Text -> IO (Either String (UnverifiedUser (IOMutRes USEREVENT)))
+getDBUser :: Text -> IO (Either String (User (IOMutRes USEREVENT)))
 getDBUser uname = do
   UnverifiedPerson { name, surname, email } <- dbPerson
   return
@@ -69,8 +69,8 @@ getDBUser uname = do
         UnverifiedUser { unverifiedUserName = constRes name
                        , unverifiedUserEmail = constRes email
                        , unverifiedUserSurname = constRes surname
-                       }
-      else Left "No such user"
+                       } :: (Either String (User (IOMutRes USEREVENT)))
+      else Left "No such user" :: (Either String (User (IOMutRes USEREVENT)))
 
 setDBUser :: IO (UnverifiedUser (IOMutRes USEREVENT))
 setDBUser = do
