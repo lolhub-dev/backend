@@ -1,0 +1,16 @@
+type UnverifiedUser  {
+	name: String!
+	surname: String!
+	email: String!
+}
+
+type Query {
+	helloWorld: String!
+}
+
+type Mutation {
+	register(email: String!, password: String!): UnverifiedUser!
+	login(
+	username: String!
+	, password: String!): UnverifiedUser!
+}

@@ -2,7 +2,7 @@
 
 module Main where
 
-import           Lolhub.Connection.API
+import           Lolhub.Connection.Graphql.UserApi (userApi)
 import           Control.Monad.IO.Class
 import           Web.Scotty
 import           System.Exit
@@ -45,3 +45,4 @@ main = do
       post "/api" $ raw =<< (liftIO . gqlApi =<< body)
   close pipe
   print e
+-- post "/gamemodes" $ raw =<< (liftIO . gamemodeApi =<< body)

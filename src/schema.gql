@@ -1,8 +1,0 @@
-type Query {
-  deity(name: String!): Deity!
-}
-
-type Deity {
-  name: String!
-  power: String
-}
