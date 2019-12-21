@@ -66,3 +66,5 @@ packages:
 # compiler-check: newer-minor
 extra-deps:
   - morpheus-graphql-0.8.0
+  - monadIO-0.11.1.0
+  - bson-mapping-0.1.5.1

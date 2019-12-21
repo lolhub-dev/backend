@@ -24,8 +24,14 @@ dependencies:
 - text
 - bytestring
 - morpheus-graphql
+- mongoDB
 - mtl
-
+- wai-extra
+- monadIO
+- bson-mapping
+- transformers
+- hspec
+- QuickCheck
 library:
   source-dirs: src
 
@@ -51,5 +57,3 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - backend
-    - hspec
-    - QuickCheck
