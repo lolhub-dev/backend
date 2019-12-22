@@ -28,7 +28,7 @@ hostName = "127.0.0.1"
 -- | runs the accumulated Actions 
 exampleActions :: Action IO (Maybe User)
 exampleActions = do
-  insertRes <- insertUser $ User "test" "test" "test" "test" "test"
+  insertRes <- insertUser $ User 1 "test" "test" "test" "test" "test" "test"
   user <- getUser "test"
   invalidUser <- getUser "invalidUser"
   return $ putStrLn $ show user
@@ -42,7 +42,15 @@ main = do
   scotty portScotty
     $ do
       middleware logStdoutDev -- logging
+<<<<<<< HEAD
       post "/api" $ raw =<< (liftIO . (userApi pipe) =<< body)
+=======
+      middleware
+        $ jwt
+          "TVwTQvknx0vaQE6mTlFJPB9VSbz5iPRS" -- JWT server secret, dont change !!! //TODO: put this in some global server env file
+          ["/user"] -- ignored routes for authentication
+      post "/user" $ raw =<< (liftIO . userApi =<< body)
+      -- post "/gamemodes" $ raw =<< (liftIO . gamemodeApi =<< body)
+>>>>>>> 5b861e8bde4b7efc6fbd50070033e011a6d2e8dc
   close pipe
   print e
--- post "/gamemodes" $ raw =<< (liftIO . gamemodeApi =<< body)

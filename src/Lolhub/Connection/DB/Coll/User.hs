@@ -1,6 +1,4 @@
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DeriveGeneric #-}
 
 module LolHub.Connection.DB.Coll.User (getUser, insertUser, User(..)) where
 
@@ -12,27 +10,16 @@ import           Control.Monad.Trans (liftIO)
 import           LolHub.Connection.DB.Mongo (run, mapAction)
 import           Control.Concurrent.MonadIO
 import           GHC.Generics
+import           LolHub.Domain.User
 import           Data.Bson.Mapping
-import           Data.Data (Typeable)
-import           Control.Monad.Trans.Class (lift)
-
-data User = User { username :: String
-                 , email :: String
-                 , firstname :: String
-                 , lastname :: String
-                 , password :: String
-                 }
-  deriving (Generic, Typeable, Show, Read, Eq, Ord)
-
-$(deriveBson ''User)
 
 collection :: Collection
 collection = "user"
 
 getUser :: String -> Action IO (Maybe User)
-getUser username = mapAction result
+getUser username = mapAction query
   where
-    result = findOne (select ["username" =: username] collection)
+    query = findOne (select ["username" =: username] collection)
       :: Action IO (Maybe Document)
 
 insertUser :: User -> Action IO Value
