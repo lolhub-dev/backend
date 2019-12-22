@@ -13,6 +13,7 @@ import           Database.MongoDB (Action, connect, host, access, master, close
 import           Database.MongoDB.Connection (Host(..), PortID)
 import           Lolhub.Connection.DB.Coll.User
 import           Lolhub.Connection.DB.Mongo (run)
+import           Network.Wai.Middleware.JWT
 
 -- | returns the port for Scotty
 portScotty = 3000
@@ -28,7 +29,7 @@ hostName = "127.0.0.1"
 -- | runs the accumulated Actions 
 exampleActions :: Action IO (Maybe User)
 exampleActions = do
-  insertRes <- insertUser $ User "test" "test" "test" "test" "test"
+  insertRes <- insertUser $ User 1 "test" "test" "test" "test" "test" "test"
   user <- getUser "test"
   invalidUser <- getUser "invalidUser"
   return $ putStrLn $ show user
@@ -42,7 +43,11 @@ main = do
   scotty portScotty
     $ do
       middleware logStdoutDev -- logging
-      post "/api" $ raw =<< (liftIO . userApi =<< body)
+      middleware
+        $ jwt
+          "TVwTQvknx0vaQE6mTlFJPB9VSbz5iPRS" -- JWT server secret, dont change !!! //TODO: put this in some global server env file
+          ["/user"] -- ignored routes for authentication
+      post "/user" $ raw =<< (liftIO . userApi =<< body)
+      -- post "/gamemodes" $ raw =<< (liftIO . gamemodeApi =<< body)
   close pipe
   print e
--- post "/gamemodes" $ raw =<< (liftIO . gamemodeApi =<< body)

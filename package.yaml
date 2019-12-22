@@ -30,8 +30,14 @@ dependencies:
 - monadIO
 - bson-mapping
 - transformers
-- hspec
-- QuickCheck
+- jwt
+- aeson
+- wai
+- time
+- http-types
+- case-insensitive
+- word8
+
 library:
   source-dirs: src
 
@@ -57,3 +63,5 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - backend
+    - hspec
+    - QuickCheck
