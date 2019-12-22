@@ -9,7 +9,7 @@ type Query {
 }
 
 type Mutation {
-	register(email: String!, password: String!): UnverifiedUser!
+	register(username:String!, name: String!, surname: String!, email: String!, password: String!): UnverifiedUser!
 	login(
 	username: String!
 	, password: String!): UnverifiedUser!

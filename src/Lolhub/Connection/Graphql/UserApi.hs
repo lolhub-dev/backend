@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
@@ -5,24 +6,24 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Lolhub.Connection.Graphql.UserApi (userApi, USEREVENT) where
+module LolHub.Connection.Graphql.UserApi (userApi, USEREVENT) where
 
 import           Control.Monad.Trans (lift)
 import qualified Data.ByteString.Lazy.Char8 as B
-
-import Database.MongoDB (Pipe)
-
+import           Database.MongoDB (Pipe)
+import qualified Data.Text as T
 import           Data.Morpheus (interpreter)
 import           Data.Morpheus.Document (importGQLDocumentWithNamespace)
 import           Data.Morpheus.Types (Event(..), GQLRootResolver(..), IOMutRes
                                     , IORes, ResolveM, ResolveQ, ResolveS
                                     , Undefined(..), constRes, liftEither)
 import           Data.Text (Text)
+import           LolHub.Connection.DB.Mongo (run)
+import           LolHub.Connection.DB.Coll.User
 
 importGQLDocumentWithNamespace "src/Lolhub/Connection/Graphql/UserApi.gql"
 
@@ -44,52 +45,61 @@ userGqlRoot pipe =
     queryResolver = Query { queryHelloWorld = resolveHelloWorld }
 
     -------------------------------------------------------------
-    mutationResolver =
-      Mutation { mutationLogin = loginUser, mutationRegister = registerUser }
+    mutationResolver = Mutation { mutationLogin = loginUser pipe
+                                , mutationRegister = registerUser pipe
+                                }
 
     subscriptionResolver = Undefined
 
 ----- QUERY RESOLVERS -----
-loginUser :: MutationLoginArgs -> ResolveM USEREVENT IO UnverifiedUser
+loginUser :: Pipe -> MutationLoginArgs -> ResolveM USEREVENT IO UnverifiedUser
 loginUser
+  pipe
   MutationLoginArgs { mutationLoginArgsUsername, mutationLoginArgsPassword } =
-  liftEither (getDBUser mutationLoginArgsUsername)
+  liftEither (getDBUser pipe mutationLoginArgsUsername)
 
 resolveHelloWorld :: () -> IORes USEREVENT Text
 resolveHelloWorld = constRes "helloWorld"
 
 ----- MUTATION RESOLVERS -----
-registerUser :: MutationRegisterArgs -> ResolveM USEREVENT IO UnverifiedUser
-registerUser _args = lift setDBUser
+registerUser
+  :: Pipe -> MutationRegisterArgs -> ResolveM USEREVENT IO UnverifiedUser
+registerUser pipe args = lift (setDBUser pipe args)
 
 ----- STUB DB -----
-getDBUser :: Text -> IO (Either String (UnverifiedUser (IOMutRes USEREVENT)))
-getDBUser uname = do
-  UnverifiedPerson { name, surname, email } <- dbPerson
+getDBUser
+  :: Pipe -> Text -> IO (Either String (UnverifiedUser (IOMutRes USEREVENT)))
+getDBUser pipe uname = do
+  result <- run (getUser $ T.unpack uname) pipe
   return
-    $ if uname == "test"
-      then Right
-        UnverifiedUser { unverifiedUserName = constRes name
-                       , unverifiedUserEmail = constRes email
-                       , unverifiedUserSurname = constRes surname
+    $ case result of
+      Nothing -> Left "No such user found"
+      Just User { username, email, firstname, lastname, password } -> Right
+        UnverifiedUser { unverifiedUserName = constRes $ T.pack firstname
+                       , unverifiedUserSurname = constRes $ T.pack lastname
+                       , unverifiedUserEmail = constRes $ T.pack email
                        }
-      else Left "No such user"
 
-setDBUser :: IO (UnverifiedUser (IOMutRes USEREVENT))
-setDBUser = do
-  UnverifiedPerson { name, surname, email } <- dbPerson
+setDBUser
+  :: Pipe -> MutationRegisterArgs -> IO (UnverifiedUser (IOMutRes USEREVENT))
+setDBUser
+  pipe
+  MutationRegisterArgs { mutationRegisterArgsUsername
+                       , mutationRegisterArgsName
+                       , mutationRegisterArgsSurname
+                       , mutationRegisterArgsEmail
+                       , mutationRegisterArgsPassword
+                       } = do
+  run (insertUser user) pipe
   return
-    UnverifiedUser { unverifiedUserName = constRes name
+    UnverifiedUser { unverifiedUserName = constRes firstname
+                   , unverifiedUserSurname = constRes lastname
                    , unverifiedUserEmail = constRes email
-                   , unverifiedUserSurname = constRes surname
                    }
-
-dbPerson :: IO UnverifiedPerson
-dbPerson = return
-  UnverifiedPerson { name = "George"
-                   , surname = "Hotz"
-                   , email = "George@email.com"
-                   }
-
-data UnverifiedPerson =
-  UnverifiedPerson { name :: Text, surname :: Text, email :: Text }
+  where
+    user = User { username = mutationRegisterArgsUsername
+                , email = mutationRegisterArgsEmail
+                , firstname = mutationRegisterArgsName
+                , lastname = mutationRegisterArgsSurname
+                , password = mutationRegisterArgsPassword
+                }

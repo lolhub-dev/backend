@@ -2,14 +2,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveGeneric #-}
 
-module Lolhub.Connection.DB.Coll.User (getUser, insertUser, User(..)) where
+module LolHub.Connection.DB.Coll.User (getUser, insertUser, User(..)) where
 
 import           Database.MongoDB (Action, Pipe, Collection, Document, Value
                                  , access, close, connect, delete, exclude, find
                                  , findOne, host, insert, insertMany, master
                                  , project, rest, select, sort, (=:))
 import           Control.Monad.Trans (liftIO)
-import           Lolhub.Connection.DB.Mongo (run, mapAction)
+import           LolHub.Connection.DB.Mongo (run, mapAction)
 import           Control.Concurrent.MonadIO
 import           GHC.Generics
 import           Data.Bson.Mapping

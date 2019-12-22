@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Lolhub.Connection.DB.Mongo (run, mapAction) where
+module LolHub.Connection.DB.Mongo (run, mapAction) where
 
 import           Database.MongoDB (access, master, Action, Pipe, Document)
 import           Control.Concurrent.MonadIO

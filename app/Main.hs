@@ -2,7 +2,7 @@
 
 module Main where
 
-import           Lolhub.Connection.Graphql.UserApi (userApi)
+import           LolHub.Connection.Graphql.UserApi (userApi)
 import           Control.Monad.IO.Class
 import           Web.Scotty
 import           System.Exit
@@ -11,8 +11,8 @@ import           Network.Wai.Middleware.RequestLogger
 import           Database.MongoDB (Action, connect, host, access, master, close
                                  , Document)
 import           Database.MongoDB.Connection (Host(..), PortID)
-import           Lolhub.Connection.DB.Coll.User
-import           Lolhub.Connection.DB.Mongo (run)
+import           LolHub.Connection.DB.Coll.User
+import           LolHub.Connection.DB.Mongo (run)
 
 -- | returns the port for Scotty
 portScotty = 3000
