@@ -42,7 +42,7 @@ main = do
   scotty portScotty
     $ do
       middleware logStdoutDev -- logging
-      post "/api" $ raw =<< (liftIO . userApi =<< body)
+      post "/api" $ raw =<< (liftIO . (userApi pipe) =<< body)
   close pipe
   print e
 -- post "/gamemodes" $ raw =<< (liftIO . gamemodeApi =<< body)

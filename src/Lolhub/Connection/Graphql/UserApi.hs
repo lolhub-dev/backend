@@ -14,6 +14,9 @@ module Lolhub.Connection.Graphql.UserApi (userApi, USEREVENT) where
 
 import           Control.Monad.Trans (lift)
 import qualified Data.ByteString.Lazy.Char8 as B
+
+import Database.MongoDB (Pipe)
+
 import           Data.Morpheus (interpreter)
 import           Data.Morpheus.Document (importGQLDocumentWithNamespace)
 import           Data.Morpheus.Types (Event(..), GQLRootResolver(..), IOMutRes
@@ -31,11 +34,11 @@ newtype Content = Content { contentID :: Int }
 
 type USEREVENT = (Event Channel Content)
 
-userApi :: B.ByteString -> IO B.ByteString
-userApi = interpreter userGqlRoot
+userApi :: Pipe -> B.ByteString -> IO B.ByteString
+userApi pipe = interpreter $ userGqlRoot pipe
 
-userGqlRoot :: GQLRootResolver IO USEREVENT Query Mutation Undefined
-userGqlRoot =
+userGqlRoot :: Pipe -> GQLRootResolver IO USEREVENT Query Mutation Undefined
+userGqlRoot pipe =
   GQLRootResolver { queryResolver, mutationResolver, subscriptionResolver }
   where
     queryResolver = Query { queryHelloWorld = resolveHelloWorld }
