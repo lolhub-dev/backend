@@ -92,14 +92,14 @@ setDBUser
                        } = do
   run (insertUser user) pipe
   return
-    UnverifiedUser { unverifiedUserName = constRes firstname
-                   , unverifiedUserSurname = constRes lastname
-                   , unverifiedUserEmail = constRes email
+    UnverifiedUser { unverifiedUserName = constRes $ T.pack $ firstname user
+                   , unverifiedUserSurname = constRes $ T.pack $ lastname user
+                   , unverifiedUserEmail = constRes $ T.pack $ email user
                    }
   where
-    user = User { username = mutationRegisterArgsUsername
-                , email = mutationRegisterArgsEmail
-                , firstname = mutationRegisterArgsName
-                , lastname = mutationRegisterArgsSurname
-                , password = mutationRegisterArgsPassword
+    user = User { username = T.unpack mutationRegisterArgsUsername
+                , email = T.unpack mutationRegisterArgsEmail
+                , firstname = T.unpack mutationRegisterArgsName
+                , lastname = T.unpack mutationRegisterArgsSurname
+                , password = T.unpack mutationRegisterArgsPassword
                 }
