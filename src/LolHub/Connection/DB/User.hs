@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module LolHub.Connection.DB.Coll.User (getUserByName, insertUser, User(..)) where
+module LolHub.Connection.DB.User (getUserByName, insertUser, User(..)) where
 
 import           Database.MongoDB (Action, Pipe, Failure, Collection, Document
                                  , Value, access, close, connect, delete
@@ -8,7 +8,7 @@ import           Database.MongoDB (Action, Pipe, Failure, Collection, Document
                                  , insertMany, master, project, rest, select
                                  , sort, hint, (=:))
 import           Control.Monad.Trans (liftIO)
-import           LolHub.Connection.DB.Mongo (run, mapAction)
+import           Core.DB.MongoUtil (run, mapAction)
 import           Control.Concurrent.MonadIO
 import           GHC.Generics
 import           LolHub.Domain.User

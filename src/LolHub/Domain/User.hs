@@ -14,7 +14,7 @@ import           Data.Aeson (encode, decode, ToJSON, FromJSON, Value)
 import           Data.Time.Clock.POSIX
 import qualified Web.JWT as JWT
 import qualified Data.Map as Map
-import Data.Time.Clock
+import           Data.Time.Clock
 
 data User = User { _id :: ObjectId
                  , username :: String
@@ -28,7 +28,8 @@ data User = User { _id :: ObjectId
 
 $(deriveBson ''User)
 
-data Session = Session { uname :: Text, iat :: NominalDiffTime, exp :: NominalDiffTime }
+data Session =
+  Session { uname :: Text, iat :: NominalDiffTime, exp :: NominalDiffTime }
   deriving (Generic, Typeable, Show, Eq, Ord)
 
 instance ToJSON Session
@@ -39,7 +40,7 @@ encodeSession :: Session -> Text
 encodeSession session =
   let claims = decode $ encode $ session :: Maybe (Map.Map Text Value)
       cs = mempty   -- mempty returns a default JWTClaimsSet
-        { JWT.iss = JWT.stringOrURI "LolHub"
+        { JWT.iss = JWT.stringOrURI "LolHub" -- TODO: read that from env file or so 
         , JWT.iat = JWT.numericDate $ iat session
         , JWT.exp = JWT.numericDate $ exp session-- TODO: when we have a URI insert here
         , JWT.unregisteredClaims = JWT.ClaimsMap
