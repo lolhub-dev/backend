@@ -24,6 +24,20 @@ dependencies:
 - text
 - bytestring
 - morpheus-graphql
+- mongoDB
+- mtl
+- wai-extra
+- monadIO
+- bson-mapping
+- transformers
+- jwt
+- aeson
+- wai
+- time
+- http-types
+- case-insensitive
+- word8
+- containers
 
 library:
   source-dirs: src
