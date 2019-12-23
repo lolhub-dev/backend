@@ -1,7 +1,9 @@
 type UnverifiedUser  {
-	name: String!
-	surname: String!
+	username: String!
 	email: String!
+	firstname: String!
+	lastname: String!
+	token: String!
 }
 
 type Query {
