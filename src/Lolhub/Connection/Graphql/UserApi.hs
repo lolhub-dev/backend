@@ -14,8 +14,8 @@ module LolHub.Connection.Graphql.UserApi (userApi, USEREVENT) where
 
 import           Control.Monad.Trans (lift)
 import qualified Data.ByteString.Lazy.Char8 as B
-import           Database.MongoDB (Pipe)
-import qualified Data.Text as T
+import           Database.MongoDB (Pipe, Failure, genObjectId)
+import           Data.Text
 import           Data.Morpheus (interpreter)
 import           Data.Morpheus.Document (importGQLDocumentWithNamespace)
 import           Data.Morpheus.Types (Event(..), GQLRootResolver(..), IOMutRes
@@ -23,7 +23,11 @@ import           Data.Morpheus.Types (Event(..), GQLRootResolver(..), IOMutRes
                                     , Undefined(..), constRes, liftEither)
 import           Data.Text (Text)
 import           LolHub.Connection.DB.Mongo (run)
-import           LolHub.Connection.DB.Coll.User
+import qualified LolHub.Connection.DB.Coll.User as User
+import           LolHub.Domain.User
+import           Control.Monad.IO.Class (liftIO)
+import           Data.Time.Clock.POSIX (getPOSIXTime)
+import           Data.Aeson (encode, decode)
 
 importGQLDocumentWithNamespace "src/Lolhub/Connection/Graphql/UserApi.gql"
 
@@ -59,29 +63,37 @@ loginUser
   liftEither (getDBUser pipe mutationLoginArgsUsername)
 
 resolveHelloWorld :: () -> IORes USEREVENT Text
-resolveHelloWorld = constRes "helloWorld"
+resolveHelloWorld = constRes "helloWorld" -- TODO: remove this, when there are other queries
 
 ----- MUTATION RESOLVERS -----
 registerUser
   :: Pipe -> MutationRegisterArgs -> ResolveM USEREVENT IO UnverifiedUser
-registerUser pipe args = lift (setDBUser pipe args)
+registerUser pipe args = liftEither (setDBUser pipe args)
 
 ----- STUB DB -----
 getDBUser
   :: Pipe -> Text -> IO (Either String (UnverifiedUser (IOMutRes USEREVENT)))
 getDBUser pipe uname = do
-  result <- run (getUser $ T.unpack uname) pipe
+  result <- run (User.getUserByName $ unpack uname) pipe
+  print result
   return
     $ case result of
       Nothing -> Left "No such user found"
-      Just User { username, email, firstname, lastname, password } -> Right
-        UnverifiedUser { unverifiedUserName = constRes $ T.pack firstname
-                       , unverifiedUserSurname = constRes $ T.pack lastname
-                       , unverifiedUserEmail = constRes $ T.pack email
+      Just
+        User.User { User.username
+                  , User.email
+                  , User.firstname
+                  , User.lastname
+                  , User.password
+                  } -> Right
+        UnverifiedUser { unverifiedUserName = constRes $ pack firstname
+                       , unverifiedUserSurname = constRes $ pack lastname
+                       , unverifiedUserEmail = constRes $ pack email
                        }
 
-setDBUser
-  :: Pipe -> MutationRegisterArgs -> IO (UnverifiedUser (IOMutRes USEREVENT))
+setDBUser :: Pipe
+          -> MutationRegisterArgs
+          -> IO (Either String (UnverifiedUser (IOMutRes USEREVENT)))
 setDBUser
   pipe
   MutationRegisterArgs { mutationRegisterArgsUsername
@@ -90,16 +102,32 @@ setDBUser
                        , mutationRegisterArgsEmail
                        , mutationRegisterArgsPassword
                        } = do
-  run (insertUser user) pipe
-  return
-    UnverifiedUser { unverifiedUserName = constRes $ T.pack $ firstname user
-                   , unverifiedUserSurname = constRes $ T.pack $ lastname user
-                   , unverifiedUserEmail = constRes $ T.pack $ email user
-                   }
-  where
-    user = User { username = T.unpack mutationRegisterArgsUsername
-                , email = T.unpack mutationRegisterArgsEmail
-                , firstname = T.unpack mutationRegisterArgsName
-                , lastname = T.unpack mutationRegisterArgsSurname
-                , password = T.unpack mutationRegisterArgsPassword
-                }
+  objectId <- genObjectId
+  currTime <- round <$> getPOSIXTime
+  user <- return
+    User.User { User._id = objectId
+              , User.username = unpack mutationRegisterArgsUsername
+              , User.email = unpack mutationRegisterArgsEmail
+              , User.firstname = unpack mutationRegisterArgsName
+              , User.lastname = unpack mutationRegisterArgsSurname
+              , User.password = unpack mutationRegisterArgsPassword
+              , User.token = encodeSession
+                  Session { uname = mutationRegisterArgsUsername
+                          , timestamp = currTime
+                          }
+              }
+  eitherActionOrFailure <- User.insertUser user
+  case eitherActionOrFailure of
+    Right action -> liftIO
+      $ do
+        run action pipe
+        return
+          $ Right
+            UnverifiedUser { unverifiedUserName =
+                               constRes $ pack $ User.firstname user
+                           , unverifiedUserSurname =
+                               constRes $ pack $ User.lastname user
+                           , unverifiedUserEmail =
+                               constRes $ pack $ User.email user
+                           }
+    Left failure -> return $ Left $ show failure

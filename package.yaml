@@ -37,6 +37,7 @@ dependencies:
 - http-types
 - case-insensitive
 - word8
+- containers
 
 library:
   source-dirs: src

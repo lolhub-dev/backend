@@ -1,26 +1,27 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module LolHub.Connection.DB.Coll.User (getUser, insertUser, User(..)) where
+module LolHub.Connection.DB.Coll.User (getUserByName, insertUser, User(..)) where
 
-import           Database.MongoDB (Action, Pipe, Collection, Document, Value
-                                 , access, close, connect, delete, exclude, find
-                                 , findOne, host, insert, insertMany, master
-                                 , project, rest, select, sort, (=:))
+import           Database.MongoDB (Action, Pipe, Failure, Collection, Document
+                                 , Value, access, close, connect, delete
+                                 , exclude, find, findOne, host, insert
+                                 , insertMany, master, project, rest, select
+                                 , sort, hint, (=:))
 import           Control.Monad.Trans (liftIO)
 import           LolHub.Connection.DB.Mongo (run, mapAction)
 import           Control.Concurrent.MonadIO
 import           GHC.Generics
 import           LolHub.Domain.User
 import           Data.Bson.Mapping
+import           Control.Exception
 
-collection :: Collection
-collection = "user"
+col :: Collection
+col = "user"
 
-getUser :: String -> Action IO (Maybe User)
-getUser username = mapAction query
+getUserByName :: String -> Action IO (Maybe User)
+getUserByName username = mapAction query
   where
-    query = findOne (select ["username" =: username] collection)
-      :: Action IO (Maybe Document)
+    query = findOne (select ["username" =: username] col)
 
-insertUser :: User -> Action IO Value
-insertUser user = insert collection (toBson user)
+insertUser :: User -> IO (Either Failure (Action IO Value))
+insertUser user = try (return (insert col (toBson user)))

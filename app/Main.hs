@@ -26,20 +26,9 @@ portMongo = 37017
 hostName :: String
 hostName = "127.0.0.1"
 
--- | runs the accumulated Actions 
-exampleActions :: Action IO (Maybe User)
-exampleActions = do
-  insertRes <- insertUser $ User 1 "test" "test" "test" "test" "test" "test"
-  user <- getUser "test"
-  invalidUser <- getUser "invalidUser"
-  return $ putStrLn $ show user
-  return $ print invalidUser
-  return user
-
 main :: IO ()
 main = do
   pipe <- connect (Host hostName portMongo)
-  e <- run exampleActions pipe
   scotty portScotty
     $ do
       middleware logStdoutDev -- logging
@@ -50,4 +39,3 @@ main = do
       post "/user" $ raw =<< (liftIO . (userApi pipe) =<< body)
       -- post "/gamemodes" $ raw =<< (liftIO . gamemodeApi =<< body)
   close pipe
-  print e

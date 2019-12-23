@@ -7,10 +7,17 @@ module LolHub.Domain.User where
 import           Data.Data (Typeable)
 import           GHC.Generics
 import           Data.Bson.Mapping
+import           Database.MongoDB (ObjectId)
 import           Data.Text
+import           Data.Text.Lazy (toStrict)
+import           Data.Text.Lazy.Encoding
 import           Data.Aeson
+import           Data.Time.Clock.POSIX
+import           Data.Aeson (encode, decode)
+import           Web.JWT
+import qualified Data.Map as Map
 
-data User = User { id :: Integer
+data User = User { _id :: ObjectId
                  , username :: String
                  , email :: String
                  , firstname :: String
@@ -22,13 +29,19 @@ data User = User { id :: Integer
 
 $(deriveBson ''User)
 
-data Session = Session { sessionId :: Integer
-                       , date :: Text
-                       , time :: Text
-                       , validUntil :: Text
-                       }
+data Session = Session { uname :: Text, timestamp :: Integer }
   deriving (Show, Generic)
 
 instance ToJSON Session
 
 instance FromJSON Session
+
+encodeSession :: Session -> Text
+encodeSession session =
+  let cs = mempty   -- mempty returns a default JWTClaimsSet
+        { iss = stringOrURI Foo
+        , unregisteredClaims = Map.fromList
+            [("http://example.com/is_root", (Bool True))]
+        }
+      key = hmacSecret "secret-key"
+  in encodeSigned key mempty cs
