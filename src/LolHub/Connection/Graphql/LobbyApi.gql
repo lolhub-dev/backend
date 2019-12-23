@@ -1,0 +1,31 @@
+# import UnverifiedUser from "UserApi.gql"
+
+type Lobby {
+	id: String!
+	state: LobbyState!
+	type: LobbyType!
+	creator: UnverifiedUser! # TODO: refactor user into union type
+	teams: Teams!
+}
+
+type Teams {
+	blueTeam: Team!
+	redTeam: Team!
+}
+
+type Team {
+	members: [UnverifiedUser]!
+}
+
+enum LobbyState {
+	WAITING
+	FULL
+	CLOSED
+	OPEN
+}
+
+enum LobbyType {
+	PRIVATE
+	PUBLIC
+	HIDDEN
+}
