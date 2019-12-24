@@ -23,8 +23,8 @@ import           Data.Morpheus.Types (Event(..), GQLRootResolver(..), IOMutRes
                                     , Undefined(..), constRes, liftEither)
 import           Data.Text (Text)
 import qualified LolHub.Domain.User as UserE
-import           LolHub.Connection.DB.Mongo (run)
-import qualified LolHub.Connection.DB.Coll.User as User
+import           Core.DB.MongoUtil (run)
+import qualified LolHub.Connection.DB.User as User
 import           Control.Monad.IO.Class (liftIO)
 import           Data.Time.Clock.POSIX (getPOSIXTime)
 import           Web.JWT

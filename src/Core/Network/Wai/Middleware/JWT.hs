@@ -2,7 +2,7 @@
 {-# LANGUAGE PostfixOperators #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Network.Wai.Middleware.JWT (jwt) where
+module Core.Network.Wai.Middleware.JWT (jwt) where
 
 import           Network.Wai
 import           Web.JWT

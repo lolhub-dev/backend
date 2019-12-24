@@ -40,7 +40,7 @@ encodeSession :: Session -> Text
 encodeSession session =
   let claims = decode $ encode $ session :: Maybe (Map.Map Text Value)
       cs = mempty   -- mempty returns a default JWTClaimsSet
-        { JWT.iss = JWT.stringOrURI "LolHub"
+        { JWT.iss = JWT.stringOrURI "LolHub" -- TODO: read that from env file or so 
         , JWT.iat = JWT.numericDate $ iat session
         , JWT.exp = JWT.numericDate $ exp session-- TODO: when we have a URI insert here
         , JWT.unregisteredClaims = JWT.ClaimsMap
