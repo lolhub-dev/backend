@@ -14,7 +14,7 @@ import           Data.Aeson (encode, decode, ToJSON, FromJSON, Value)
 import           Data.Time.Clock.POSIX
 import qualified Web.JWT as JWT
 import qualified Data.Map as Map
-import Data.Time.Clock
+import           Data.Time.Clock
 
 data User = User { _id :: ObjectId
                  , username :: String
@@ -28,7 +28,8 @@ data User = User { _id :: ObjectId
 
 $(deriveBson ''User)
 
-data Session = Session { uname :: Text, iat :: NominalDiffTime, exp :: NominalDiffTime }
+data Session =
+  Session { uname :: Text, iat :: NominalDiffTime, exp :: NominalDiffTime }
   deriving (Generic, Typeable, Show, Eq, Ord)
 
 instance ToJSON Session
