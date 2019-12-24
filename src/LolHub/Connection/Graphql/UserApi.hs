@@ -32,7 +32,6 @@ import           Web.JWT
 importGQLDocumentWithNamespace "src/LolHub/Connection/Graphql/UserApi.gql"
 
 data Channel = USER
-             | ADDRESS
   deriving (Show, Eq, Ord)
 
 newtype Content = Content { contentID :: Int }
@@ -56,7 +55,7 @@ userGqlRoot pipe =
     subscriptionResolver = Undefined
 
 ----- QUERY RESOLVERS -----
-loginUser :: Pipe -> MutationLoginArgs -> ResolveM USEREVENT IO UnverifiedUser
+loginUser :: Pipe -> MutationLoginArgs -> ResolveM USEREVENT IO User
 loginUser
   pipe
   MutationLoginArgs { mutationLoginArgsUsername, mutationLoginArgsPassword } =
@@ -66,42 +65,38 @@ resolveHelloWorld :: () -> IORes USEREVENT Text
 resolveHelloWorld = constRes "helloWorld" -- TODO: remove this, when there are other queries
 
 ----- MUTATION RESOLVERS -----
-registerUser
-  :: Pipe -> MutationRegisterArgs -> ResolveM USEREVENT IO UnverifiedUser
+registerUser :: Pipe -> MutationRegisterArgs -> ResolveM USEREVENT IO User
 registerUser pipe args = liftEither (setDBUser pipe args)
 
 ----- STUB DB -----
-getDBUser
-  :: Pipe -> Text -> IO (Either String (UnverifiedUser (IOMutRes USEREVENT)))
+getDBUser :: Pipe -> Text -> IO (Either String (User (IOMutRes USEREVENT)))
 getDBUser pipe uname = do
   result <- run (User.getUserByName $ unpack uname) pipe
   print result
   return
     $ case result of
-      Nothing -> Left "No such user found"
-      Just
-        User.User { User.username
-                  , User.email
-                  , User.firstname
-                  , User.lastname
-                  , User.password
-                  , User.token
-                  } -> Right
-        UnverifiedUser { unverifiedUserFirstname = constRes $ pack firstname
-                       , unverifiedUserLastname = constRes $ pack lastname
-                       , unverifiedUserEmail = constRes $ pack email
-                       , unverifiedUserUsername = constRes $ pack username
-                       , unverifiedUserToken = constRes token
-                       }
+      Nothing   -> Left "No such user found"
+      Just user -> Right
+        $ UserUnverifiedUser
+        $ UnverifiedUser { unverifiedUserUsername =
+                             constRes $ pack $ User.username user
+                         , unverifiedUserFirstname =
+                             constRes $ pack $ User.firstname user
+                         , unverifiedUserLastname =
+                             constRes $ pack $ User.lastname user
+                         , unverifiedUserEmail =
+                             constRes $ pack $ User.email user
+                         , unverifiedUserToken = constRes $ User.token user
+                         }
 
 setDBUser :: Pipe
           -> MutationRegisterArgs
-          -> IO (Either String (UnverifiedUser (IOMutRes USEREVENT)))
+          -> IO (Either String (User (IOMutRes USEREVENT)))
 setDBUser
   pipe
   MutationRegisterArgs { mutationRegisterArgsUsername
-                       , mutationRegisterArgsName
-                       , mutationRegisterArgsSurname
+                       , mutationRegisterArgsFirstname
+                       , mutationRegisterArgsLastname
                        , mutationRegisterArgsEmail
                        , mutationRegisterArgsPassword
                        } = do
@@ -117,8 +112,8 @@ setDBUser
     User.User { User._id = objectId
               , User.username = unpack mutationRegisterArgsUsername
               , User.email = unpack mutationRegisterArgsEmail
-              , User.firstname = unpack mutationRegisterArgsName
-              , User.lastname = unpack mutationRegisterArgsSurname
+              , User.firstname = unpack mutationRegisterArgsFirstname
+              , User.lastname = unpack mutationRegisterArgsLastname
               , User.password = unpack mutationRegisterArgsPassword
               , User.token = token
               }
@@ -129,14 +124,15 @@ setDBUser
         run action pipe
         return
           $ Right
-            UnverifiedUser { unverifiedUserFirstname =
+          $ UserUnverifiedUser
+          $ UnverifiedUser { unverifiedUserUsername =
+                               constRes $ pack $ User.username user
+                           , unverifiedUserFirstname =
                                constRes $ pack $ User.firstname user
                            , unverifiedUserLastname =
                                constRes $ pack $ User.lastname user
                            , unverifiedUserEmail =
                                constRes $ pack $ User.email user
-                           , unverifiedUserUsername =
-                               constRes $ pack $ User.username user
-                           , unverifiedUserToken = constRes token
+                           , unverifiedUserToken = constRes $ User.token user
                            }
     Left failure -> return $ Left $ show failure

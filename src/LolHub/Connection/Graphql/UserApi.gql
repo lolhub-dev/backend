@@ -1,26 +1,34 @@
 interface UserI {
-	name: String!
-	surname: String!
+	username: String!
+	firstname: String!
+	lastname: String!
 	email: String!
+	token: String!
 }
 
 type UnverifiedUser {
-	name: String!
-	surname: String!
+	username: String!
+	firstname: String!
+	lastname: String!
 	email: String!
+	token: String!
 }
 
 type VerifiedUser {
-	name: String!
-	surname: String!
+	username: String!
+	firstname: String!
+	lastname: String!
 	email: String!
+	token: String!
 	verifiedDate: Int!
 }
 
 type VerifiedSummoner {
-	name: String!
-	surname: String!
+	username: String!
+	firstname: String!
+	lastname: String!
 	email: String!
+	token: String!
 	verifiedDate: Int!
 	summonerName: String!
 }
@@ -32,7 +40,7 @@ type Query {
 }
 
 type Mutation {
-	register(email: String!, password: String!): User!
+	register(username: String!, firstname: String!, lastname: String!, email: String!, password: String!): User!
 	login(
 	username: String!
 	, password: String!): User!
