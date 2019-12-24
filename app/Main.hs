@@ -8,12 +8,12 @@ import           Web.Scotty
 import           System.Exit
 import           Control.Concurrent
 import           Network.Wai.Middleware.RequestLogger
-import           Network.Wai.Middleware.JWT
+import           Core.Network.Wai.Middleware.JWT
 import           Database.MongoDB (Action, connect, host, access, master, close
                                  , Document)
 import           Database.MongoDB.Connection (Host(..), PortID)
-import           LolHub.Connection.DB.Coll.User
-import           LolHub.Connection.DB.Mongo (run)
+import           LolHub.Connection.DB.User
+import           Core.DB.MongoUtil (run)
 
 -- | returns the port for Scotty
 portScotty = 3000
