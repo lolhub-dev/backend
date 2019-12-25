@@ -1,0 +1,12 @@
+type Query {
+	helloWorld: String!
+}
+
+type Mutation {
+	# USER #
+	register (username: String!, firstname: String!, lastname: String!, email: String!, password: String!): User!
+	login (username: String!, password: String!): User!
+
+	# LOBBY #
+	createLobby ( kind: LobbyKind!): Lobby!
+}

@@ -27,3 +27,7 @@ backend.cabal
 backend\.cabal
 
 .vscode/
+
+a.txt
+
+out.txt

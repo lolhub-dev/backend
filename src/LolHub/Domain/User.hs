@@ -49,5 +49,5 @@ encodeSession session =
               Just m  -> m
               Nothing -> Map.fromList []
         }
-      key = JWT.hmacSecret "secret-key"
+      key = JWT.hmacSecret "TVwTQvknx0vaQE6mTlFJPB9VSbz5iPRS"
   in JWT.encodeSigned key mempty cs

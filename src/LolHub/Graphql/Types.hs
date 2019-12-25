@@ -15,3 +15,5 @@ import           Data.Morpheus.Document (importGQLDocumentWithNamespace)
 import           Data.Text
 
 importGQLDocumentWithNamespace "src/LolHub/Graphql/Api.gql"
+
+importGQLDocumentWithNamespace "src/LolHub/Graphql/Query.gql"
