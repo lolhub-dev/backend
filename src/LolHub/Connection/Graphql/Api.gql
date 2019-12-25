@@ -1,0 +1,83 @@
+type Query {
+	helloWorld: String!
+}
+
+type Mutation {
+    # USER #
+	register (username: String!, firstname: String!, lastname: String!, email: String!, password: String!): User!
+	login (username: String!, password: String!): User!
+
+    # LOBBY #
+    createLobby ( type:LobbyType!): Lobby!
+}
+
+
+interface UserI {
+	username: String!
+	firstname: String!
+	lastname: String!
+	email: String!
+	token: String!
+}
+
+type UnverifiedUser {
+	username: String!
+	firstname: String!
+	lastname: String!
+	email: String!
+	token: String!
+}
+
+type VerifiedUser {
+	username: String!
+	firstname: String!
+	lastname: String!
+	email: String!
+	token: String!
+	verifiedDate: Int!
+}
+
+type VerifiedSummoner {
+	username: String!
+	firstname: String!
+	lastname: String!
+	email: String!
+	token: String!
+	verifiedDate: Int!
+	summonerName: String!
+}
+
+union User = UnverifiedUser | VerifiedUser | VerifiedSummoner
+
+
+##### LOBBY #####
+
+type Lobby {
+	_id: String!
+	state: LobbyState!
+	kind: LobbyType!
+	creator: User! # TODO: refactor user into union type
+	teams: Teams!
+}
+
+type Teams {
+	blueTeam: Team!
+	redTeam: Team!
+}
+
+type Team {
+	members: [User!]!
+}
+
+enum LobbyState {
+	WAITING
+	FULL
+	CLOSED
+	OPEN
+}
+
+enum LobbyType {
+	PRIVATE
+	PUBLIC
+	HIDDEN
+}

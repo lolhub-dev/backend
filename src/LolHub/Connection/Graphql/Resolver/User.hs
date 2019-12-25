@@ -10,7 +10,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module LolHub.Connection.Graphql.UserApi (userApi, USEREVENT) where
+module LolHub.Connection.Graphql.Resolver.User (userApi, USEREVENT) where
 
 import           Control.Monad.Trans (lift)
 import qualified Data.ByteString.Lazy.Char8 as B
@@ -29,7 +29,7 @@ import           Control.Monad.IO.Class (liftIO)
 import           Data.Time.Clock.POSIX (getPOSIXTime)
 import           Web.JWT
 
-importGQLDocumentWithNamespace "src/LolHub/Connection/Graphql/UserApi.gql"
+importGQLDocumentWithNamespace "src/LolHub/Connection/Graphql/Api.gql"
 
 data Channel = USER
   deriving (Show, Eq, Ord)
@@ -55,16 +55,16 @@ userGqlRoot pipe =
     subscriptionResolver = Undefined
 
 ----- QUERY RESOLVERS -----
+resolveHelloWorld :: () -> IORes USEREVENT Text
+resolveHelloWorld = constRes "helloWorld" -- TODO: remove this, when there are other queries
+
+----- MUTATION RESOLVERS -----
 loginUser :: Pipe -> MutationLoginArgs -> ResolveM USEREVENT IO User
 loginUser
   pipe
   MutationLoginArgs { mutationLoginArgsUsername, mutationLoginArgsPassword } =
   liftEither (getDBUser pipe mutationLoginArgsUsername)
 
-resolveHelloWorld :: () -> IORes USEREVENT Text
-resolveHelloWorld = constRes "helloWorld" -- TODO: remove this, when there are other queries
-
------ MUTATION RESOLVERS -----
 registerUser :: Pipe -> MutationRegisterArgs -> ResolveM USEREVENT IO User
 registerUser pipe args = liftEither (setDBUser pipe args)
 
