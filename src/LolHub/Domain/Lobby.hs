@@ -12,6 +12,6 @@ data Lobby = Lobby { _id :: ObjectId
                    , creator :: User
                    , teams :: Teams
                    }
-    deriving (Generic, Typeable, Show, Read, Eq, Ord)
+  deriving (Generic, Typeable, Show, Read, Eq, Ord)
 
 $(deriveBson ''Lobby)
