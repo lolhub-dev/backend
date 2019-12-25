@@ -1,19 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeFamilies #-}
 
-module LolHub.Connection.Graphql.Resolver.User (userApi, USEREVENT) where
+module LolHub.Graphql.Resolver.User (userApi, USEREVENT) where
 
-import           Control.Monad.Trans (lift)
-import qualified Data.ByteString.Lazy.Char8 as B
+import           Prelude hiding (exp)
+import           LolHub.Graphql.Types
+import qualified LolHub.DB.User as DB
+import           LolHub.Domain.User
+import           Core.DB.MongoUtil (run)
 import           Database.MongoDB (Pipe, Failure, genObjectId)
 import           Data.Text
 import           Data.Morpheus (interpreter)
@@ -22,14 +16,9 @@ import           Data.Morpheus.Types (Event(..), GQLRootResolver(..), IOMutRes
                                     , IORes, ResolveM, ResolveQ, ResolveS
                                     , Undefined(..), constRes, liftEither)
 import           Data.Text (Text)
-import qualified LolHub.Domain.User as UserE
-import           Core.DB.MongoUtil (run)
-import qualified LolHub.Connection.DB.User as User
 import           Control.Monad.IO.Class (liftIO)
 import           Data.Time.Clock.POSIX (getPOSIXTime)
-import           Web.JWT
-
-importGQLDocumentWithNamespace "src/LolHub/Connection/Graphql/Api.gql"
+import           Data.ByteString.Lazy (ByteString)
 
 data Channel = USER
   deriving (Show, Eq, Ord)
@@ -38,7 +27,7 @@ newtype Content = Content { contentID :: Int }
 
 type USEREVENT = (Event Channel Content)
 
-userApi :: Pipe -> B.ByteString -> IO B.ByteString
+userApi :: Pipe -> ByteString -> IO ByteString
 userApi pipe = interpreter $ userGqlRoot pipe
 
 userGqlRoot :: Pipe -> GQLRootResolver IO USEREVENT Query Mutation Undefined
@@ -71,22 +60,19 @@ registerUser pipe args = liftEither (setDBUser pipe args)
 ----- STUB DB -----
 getDBUser :: Pipe -> Text -> IO (Either String (User (IOMutRes USEREVENT)))
 getDBUser pipe uname = do
-  result <- run (User.getUserByName $ unpack uname) pipe
+  result <- run (DB.getUserByName $ unpack uname) pipe
   print result
   return
     $ case result of
       Nothing   -> Left "No such user found"
       Just user -> Right
         $ UserUnverifiedUser
-        $ UnverifiedUser { unverifiedUserUsername =
-                             constRes $ pack $ User.username user
+        $ UnverifiedUser { unverifiedUserUsername = constRes $ DB.username user
                          , unverifiedUserFirstname =
-                             constRes $ pack $ User.firstname user
-                         , unverifiedUserLastname =
-                             constRes $ pack $ User.lastname user
-                         , unverifiedUserEmail =
-                             constRes $ pack $ User.email user
-                         , unverifiedUserToken = constRes $ User.token user
+                             constRes $ DB.firstname user
+                         , unverifiedUserLastname = constRes $ DB.lastname user
+                         , unverifiedUserEmail = constRes $ DB.email user
+                         , unverifiedUserToken = constRes $ DB.token user
                          }
 
 setDBUser :: Pipe
@@ -103,21 +89,21 @@ setDBUser
   objectId <- genObjectId
   currTime <- getPOSIXTime
   token <- return
-    $ UserE.encodeSession
-    $ UserE.Session { UserE.uname = mutationRegisterArgsUsername
-                    , UserE.iat = currTime
-                    , UserE.exp = currTime + 1000 -- TODO: declare offset here" 
-                    }
+    $ encodeSession
+    $ SessionE { uname = mutationRegisterArgsUsername
+               , iat = currTime
+               , exp = currTime + 1000 -- TODO: declare offset here" 
+               }
   user <- return
-    User.User { User._id = objectId
-              , User.username = unpack mutationRegisterArgsUsername
-              , User.email = unpack mutationRegisterArgsEmail
-              , User.firstname = unpack mutationRegisterArgsFirstname
-              , User.lastname = unpack mutationRegisterArgsLastname
-              , User.password = unpack mutationRegisterArgsPassword
-              , User.token = token
-              }
-  eitherActionOrFailure <- User.insertUser user
+    UserE { _id = objectId
+          , username = mutationRegisterArgsUsername
+          , email = mutationRegisterArgsEmail
+          , firstname = mutationRegisterArgsFirstname
+          , lastname = mutationRegisterArgsLastname
+          , password = mutationRegisterArgsPassword
+          , token = token
+          }
+  eitherActionOrFailure <- DB.insertUser user
   case eitherActionOrFailure of
     Right action -> liftIO
       $ do
@@ -125,14 +111,11 @@ setDBUser
         return
           $ Right
           $ UserUnverifiedUser
-          $ UnverifiedUser { unverifiedUserUsername =
-                               constRes $ pack $ User.username user
+          $ UnverifiedUser { unverifiedUserUsername = constRes $ username user
                            , unverifiedUserFirstname =
-                               constRes $ pack $ User.firstname user
-                           , unverifiedUserLastname =
-                               constRes $ pack $ User.lastname user
-                           , unverifiedUserEmail =
-                               constRes $ pack $ User.email user
-                           , unverifiedUserToken = constRes $ User.token user
+                               constRes $ firstname user
+                           , unverifiedUserLastname = constRes $ lastname user
+                           , unverifiedUserEmail = constRes $ email user
+                           , unverifiedUserToken = constRes $ token
                            }
     Left failure -> return $ Left $ show failure

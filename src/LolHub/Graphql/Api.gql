@@ -3,16 +3,15 @@ type Query {
 }
 
 type Mutation {
-    # USER #
+	# USER #
 	register (username: String!, firstname: String!, lastname: String!, email: String!, password: String!): User!
 	login (username: String!, password: String!): User!
 
-    # LOBBY #
-    createLobby ( type:LobbyType!): Lobby!
+	# LOBBY #
+	createLobby ( kind: LobbyKind!): Lobby!
 }
 
-
-interface UserI {
+interface User {
 	username: String!
 	firstname: String!
 	lastname: String!
@@ -20,7 +19,7 @@ interface UserI {
 	token: String!
 }
 
-type UnverifiedUser {
+type UnverifiedUser implements User {
 	username: String!
 	firstname: String!
 	lastname: String!
@@ -28,7 +27,7 @@ type UnverifiedUser {
 	token: String!
 }
 
-type VerifiedUser {
+type VerifiedUser  implements User {
 	username: String!
 	firstname: String!
 	lastname: String!
@@ -37,7 +36,7 @@ type VerifiedUser {
 	verifiedDate: Int!
 }
 
-type VerifiedSummoner {
+type VerifiedSummoner  implements User {
 	username: String!
 	firstname: String!
 	lastname: String!
@@ -49,14 +48,13 @@ type VerifiedSummoner {
 
 union User = UnverifiedUser | VerifiedUser | VerifiedSummoner
 
-
-##### LOBBY #####
+# #### LOBBY #####
 
 type Lobby {
 	_id: String!
 	state: LobbyState!
-	kind: LobbyType!
-	creator: User! # TODO: refactor user into union type
+	kind: LobbyKind!
+	creator: User!
 	teams: Teams!
 }
 
@@ -76,7 +74,7 @@ enum LobbyState {
 	OPEN
 }
 
-enum LobbyType {
+enum LobbyKind {
 	PRIVATE
 	PUBLIC
 	HIDDEN
