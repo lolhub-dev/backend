@@ -1,0 +1,68 @@
+interface User {
+	username: String!
+	firstname: String!
+	lastname: String!
+	email: String!
+	token: String!
+}
+
+type UnverifiedUser implements User {
+	username: String!
+	firstname: String!
+	lastname: String!
+	email: String!
+	token: String!
+}
+
+type VerifiedUser  implements User {
+	username: String!
+	firstname: String!
+	lastname: String!
+	email: String!
+	token: String!
+	verifiedDate: Int!
+}
+
+type VerifiedSummoner  implements User {
+	username: String!
+	firstname: String!
+	lastname: String!
+	email: String!
+	token: String!
+	verifiedDate: Int!
+	summonerName: String!
+}
+
+union User = UnverifiedUser | VerifiedUser | VerifiedSummoner
+
+# #### LOBBY #####
+
+type Lobby {
+	_id: String!
+	state: LobbyState!
+	kind: LobbyKind!
+	creator: User!
+	teams: Teams!
+}
+
+type Teams {
+	blueTeam: Team!
+	redTeam: Team!
+}
+
+type Team {
+	members: [User!]!
+}
+
+enum LobbyState {
+	WAITING
+	FULL
+	CLOSED
+	OPEN
+}
+
+enum LobbyKind {
+	PRIVATE
+	PUBLIC
+	HIDDEN
+}

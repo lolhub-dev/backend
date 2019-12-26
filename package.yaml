@@ -21,6 +21,23 @@ description:         Please see the README on GitHub at <https://github.com/lolh
 
 dependencies:
 - base >= 4.7 && < 5
+- text
+- bytestring
+- morpheus-graphql
+- mongoDB
+- mtl
+- wai-extra
+- monadIO
+- bson-mapping
+- transformers
+- jwt
+- aeson
+- wai
+- time
+- http-types
+- case-insensitive
+- word8
+- containers
 
 library:
   source-dirs: src
@@ -35,6 +52,7 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - backend
+    - scotty
 
 tests:
   backend-test:
