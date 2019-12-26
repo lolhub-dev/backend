@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module LolHub.Connection.DB.User (getUserByName, insertUser, User(..)) where
+module LolHub.DB.User (getUserByName, insertUser, UserE(..), SessionE(..)) where
 
 import           Database.MongoDB (Action, Pipe, Failure, Collection, Document
                                  , Value, access, close, connect, delete
@@ -18,10 +18,10 @@ import           Control.Exception
 col :: Collection
 col = "user"
 
-getUserByName :: String -> Action IO (Maybe User)
+getUserByName :: String -> Action IO (Maybe UserE)
 getUserByName username = mapAction query
   where
     query = findOne (select ["username" =: username] col)
 
-insertUser :: User -> IO (Either Failure (Action IO Value))
+insertUser :: UserE -> IO (Either Failure (Action IO Value))
 insertUser user = try (return (insert col (toBson user)))

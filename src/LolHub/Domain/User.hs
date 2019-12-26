@@ -16,27 +16,27 @@ import qualified Web.JWT as JWT
 import qualified Data.Map as Map
 import           Data.Time.Clock
 
-data User = User { _id :: ObjectId
-                 , username :: String
-                 , email :: String
-                 , firstname :: String
-                 , lastname :: String
-                 , password :: String
-                 , token :: Text
-                 }
+data UserE = UserE { _id :: ObjectId
+                   , username :: Text
+                   , email :: Text
+                   , firstname :: Text
+                   , lastname :: Text
+                   , password :: Text
+                   , token :: Text
+                   }
   deriving (Generic, Typeable, Show, Read, Eq, Ord)
 
-$(deriveBson ''User)
+$(deriveBson ''UserE)
 
-data Session =
-  Session { uname :: Text, iat :: NominalDiffTime, exp :: NominalDiffTime }
+data SessionE =
+  SessionE { uname :: Text, iat :: NominalDiffTime, exp :: NominalDiffTime }
   deriving (Generic, Typeable, Show, Eq, Ord)
 
-instance ToJSON Session
+instance ToJSON SessionE
 
-instance FromJSON Session
+instance FromJSON SessionE
 
-encodeSession :: Session -> Text
+encodeSession :: SessionE -> Text
 encodeSession session =
   let claims = decode $ encode $ session :: Maybe (Map.Map Text Value)
       cs = mempty   -- mempty returns a default JWTClaimsSet
@@ -49,5 +49,5 @@ encodeSession session =
               Just m  -> m
               Nothing -> Map.fromList []
         }
-      key = JWT.hmacSecret "secret-key"
+      key = JWT.hmacSecret "TVwTQvknx0vaQE6mTlFJPB9VSbz5iPRS"
   in JWT.encodeSigned key mempty cs

@@ -2,7 +2,7 @@
 
 module Main where
 
-import           LolHub.Connection.Graphql.UserApi (userApi)
+import           LolHub.Graphql.Api (userApi, lobbyApi)
 import           Control.Monad.IO.Class
 import           Web.Scotty
 import           System.Exit
@@ -12,8 +12,6 @@ import           Core.Network.Wai.Middleware.JWT
 import           Database.MongoDB (Action, connect, host, access, master, close
                                  , Document)
 import           Database.MongoDB.Connection (Host(..), PortID)
-import           LolHub.Connection.DB.User
-import           Core.DB.MongoUtil (run)
 
 -- | returns the port for Scotty
 portScotty = 3000
@@ -35,7 +33,7 @@ main = do
       middleware
         $ jwt
           "TVwTQvknx0vaQE6mTlFJPB9VSbz5iPRS" -- JWT server secret, dont change !!! //TODO: put this in some global server env file
-          ["/user"] -- ignored routes for authentication
+          ["/user", "/lobby"] -- ignored routes for authentication
       post "/user" $ raw =<< (liftIO . (userApi pipe) =<< body)
-      -- post "/gamemodes" $ raw =<< (liftIO . gamemodeApi =<< body)
+      post "/lobby" $ raw =<< (liftIO . (lobbyApi pipe) =<< body)
   close pipe

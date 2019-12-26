@@ -24,4 +24,10 @@ cabal.project.local~
 stack.yaml.lock
 backend.cabal
 
+backend\.cabal
+
 .vscode/
+
+a.txt
+
+out.txt
