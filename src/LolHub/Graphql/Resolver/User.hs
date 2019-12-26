@@ -4,6 +4,7 @@
 module LolHub.Graphql.Resolver.User (userApi, USEREVENT) where
 
 import           Prelude hiding (exp)
+import           LolHub.Graphql.Query
 import           LolHub.Graphql.Types
 import qualified LolHub.DB.User as DB
 import           LolHub.Domain.User
