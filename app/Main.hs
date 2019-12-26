@@ -33,7 +33,7 @@ main = do
       middleware
         $ jwt
           "TVwTQvknx0vaQE6mTlFJPB9VSbz5iPRS" -- JWT server secret, dont change !!! //TODO: put this in some global server env file
-          ["/user"] -- ignored routes for authentication
+          ["/user", "/lobby"] -- ignored routes for authentication
       post "/user" $ raw =<< (liftIO . (userApi pipe) =<< body)
       post "/lobby" $ raw =<< (liftIO . (lobbyApi pipe) =<< body)
   close pipe

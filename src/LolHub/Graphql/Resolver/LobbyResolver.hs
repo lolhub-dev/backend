@@ -1,9 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
-module LolHub.Graphql.Resolver.Lobby (lobbyApi, USEREVENT) where
+module LolHub.Graphql.Resolver.LobbyResolver (lobbyApi, USEREVENT) where
 
 import           Core.DB.MongoUtil (run)
+import           LolHub.Graphql.Query.LobbyQuery
 import qualified LolHub.Domain.Lobby as Lobby
 import qualified LolHub.DB.Actions as DB
 import           LolHub.Graphql.Types
@@ -20,35 +21,27 @@ import           Data.Time.Clock.POSIX (getPOSIXTime)
 import           Web.JWT
 
 ----- EVENTS -----
-data Channel = LOBBY
-  deriving (Show, Eq, Ord)
-
-newtype Content = Content { contentID :: Int }
-
-type USEREVENT = (Event Channel Content)
-
-addressUpdate :: USEREVENT
-addressUpdate = Event [LOBBY] (Content { contentID = 10 })
-
 ----- API ------
 lobbyApi :: Pipe -> ByteString -> IO ByteString
 lobbyApi pipe = interpreter $ lobbyGqlRoot pipe
 
-lobbyGqlRoot :: Pipe -> GQLRootResolver IO USEREVENT Query Mutation Undefined
+lobbyGqlRoot
+  :: Pipe -> GQLRootResolver IO USEREVENT LobbyQuery Undefined Undefined
 lobbyGqlRoot pipe =
   GQLRootResolver { queryResolver, mutationResolver, subscriptionResolver }
   where
-    queryResolver = Query { queryHelloWorld = resolveHelloWorld }
+    queryResolver = LobbyQuery { queryHelloWorld = resolveHelloWorld }
 
     -------------------------------------------------------------
-    mutationResolver = Mutation { mutationCreateLobby = createLobby pipe }
+    mutationResolver = Undefined
 
+    --Mutation { mutationCreateLobby = createLobby pipe }
     subscriptionResolver = Undefined
 
 ----- QUERY RESOLVERS -----
 resolveHelloWorld :: () -> IORes USEREVENT Text
 resolveHelloWorld = constRes "helloWorld" -- TODO: remove this, when there are other queries
-
+{-| 
 ----- MUTATION RESOLVERS -----
 createLobby :: Pipe -> MutationCreateLobbyArgs -> ResolveM USEREVENT IO Lobby
 createLobby pipe args = MutResolver
@@ -89,3 +82,4 @@ createLobby' pipe args = do
                           constRes $ Team { teamMembers = constRes [] }
                       }
           }
+|-}

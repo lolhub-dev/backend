@@ -1,18 +1,26 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies #-}
 
-module LolHub.Graphql.Resolver.User (userApi, USEREVENT) where
+module LolHub.Graphql.Resolver.UserResolver (userApi, USEREVENT) where
 
 import           Prelude hiding (exp)
-import           LolHub.Graphql.Query
 import           LolHub.Graphql.Types
+import           LolHub.Graphql.Query.UserQuery
 import qualified LolHub.DB.User as DB
 import           LolHub.Domain.User
 import           Core.DB.MongoUtil (run)
 import           Database.MongoDB (Pipe, Failure, genObjectId)
 import           Data.Text
 import           Data.Morpheus (interpreter)
-import           Data.Morpheus.Document (importGQLDocumentWithNamespace)
 import           Data.Morpheus.Types (Event(..), GQLRootResolver(..), IOMutRes
                                     , IORes, ResolveM, ResolveQ, ResolveS
                                     , Undefined(..), constRes, liftEither)
@@ -20,13 +28,6 @@ import           Data.Text (Text)
 import           Control.Monad.IO.Class (liftIO)
 import           Data.Time.Clock.POSIX (getPOSIXTime)
 import           Data.ByteString.Lazy (ByteString)
-
-data Channel = USER
-  deriving (Show, Eq, Ord)
-
-newtype Content = Content { contentID :: Int }
-
-type USEREVENT = (Event Channel Content)
 
 userApi :: Pipe -> ByteString -> IO ByteString
 userApi pipe = interpreter $ userGqlRoot pipe
@@ -38,8 +39,8 @@ userGqlRoot pipe =
     queryResolver = Query { queryHelloWorld = resolveHelloWorld }
 
     -------------------------------------------------------------
-    mutationResolver = Mutation { mutationLogin = loginUser pipe
-                                , mutationRegister = registerUser pipe
+    mutationResolver = Mutation { mutationRegister = registerUser pipe
+                                , mutationLogin = loginUser pipe
                                 }
 
     subscriptionResolver = Undefined
