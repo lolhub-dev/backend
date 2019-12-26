@@ -20,34 +20,31 @@ import           Data.Morpheus.Types (Event(..), GQLRootResolver(..), IOMutRes
 import           Data.Time.Clock.POSIX (getPOSIXTime)
 import           Web.JWT
 
------ EVENTS -----
 ----- API ------
 lobbyApi :: Pipe -> ByteString -> IO ByteString
 lobbyApi pipe = interpreter $ lobbyGqlRoot pipe
 
-lobbyGqlRoot
-  :: Pipe -> GQLRootResolver IO USEREVENT LobbyQuery Undefined Undefined
+lobbyGqlRoot :: Pipe -> GQLRootResolver IO USEREVENT Query Mutation Undefined
 lobbyGqlRoot pipe =
   GQLRootResolver { queryResolver, mutationResolver, subscriptionResolver }
   where
-    queryResolver = LobbyQuery { queryHelloWorld = resolveHelloWorld }
+    queryResolver = Query { queryHelloWorld = resolveHelloWorld }
 
     -------------------------------------------------------------
-    mutationResolver = Undefined
+    mutationResolver = Mutation { mutationCreateLobby = createLobby pipe }
 
-    --Mutation { mutationCreateLobby = createLobby pipe }
     subscriptionResolver = Undefined
 
 ----- QUERY RESOLVERS -----
 resolveHelloWorld :: () -> IORes USEREVENT Text
 resolveHelloWorld = constRes "helloWorld" -- TODO: remove this, when there are other queries
-{-| 
+
 ----- MUTATION RESOLVERS -----
 createLobby :: Pipe -> MutationCreateLobbyArgs -> ResolveM USEREVENT IO Lobby
 createLobby pipe args = MutResolver
   $ do
     value <- lift (createLobby' pipe args)
-    pure ([addressUpdate], value)
+    pure ([Event [USER] (Content { contentID = 10 })], value) -- TODO:return event
 
 createLobby'
   :: Pipe -> MutationCreateLobbyArgs -> IO (Lobby (IOMutRes USEREVENT))
@@ -82,4 +79,3 @@ createLobby' pipe args = do
                           constRes $ Team { teamMembers = constRes [] }
                       }
           }
-|-}

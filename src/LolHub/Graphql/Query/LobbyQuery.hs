@@ -4,19 +4,26 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE DeriveAnyClass, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DeriveAnyClass #-}
 
 module LolHub.Graphql.Query.LobbyQuery where
 
 import           LolHub.Graphql.Types
 import           GHC.Generics
 import           Data.Text
-import           Data.Morpheus.Types (GQLType(..))
+import           Data.Morpheus.Types (GQLType(..), MutRes)
 
-data LobbyQuery m = LobbyQuery { queryHelloWorld :: () -> m Text }
+data Query m = Query { queryHelloWorld :: () -> m Text }
   deriving (Generic, GQLType)
+
+data Mutation m =
+  Mutation { mutationCreateLobby
+               :: MutationCreateLobbyArgs -> m (Lobby (MutRes USEREVENT IO))
+           }
+  deriving (Generic, GQLType)
+
+data MutationCreateLobbyArgs =
+  MutationCreateLobbyArgs { mutationCreateLobbyArgsKind :: LobbyKind }
+  deriving (Generic)
