@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Lolhub.Connection.DB.Mongo (run, mapAction) where
+module Core.DB.MongoUtil (run, mapAction) where
 
 import           Database.MongoDB (access, master, Action, Pipe, Document)
 import           Control.Concurrent.MonadIO
@@ -12,7 +12,7 @@ import           Control.Monad.Trans.Reader (mapReaderT)
 
 -- | returns the DB name 
 dbName :: Database
-dbName = "lolhub"
+dbName = "lolhub" -- TODO: read from global env file
 
 run :: MonadIO m => Action m a -> Pipe -> m a
 run action pipe = access pipe master dbName action
