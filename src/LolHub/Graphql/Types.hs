@@ -71,6 +71,7 @@ resolveLobby lobbyE userE =
         Lobby.OPEN   -> OPEN
         Lobby.CLOSED -> CLOSED
         Lobby.FULL   -> FULL
+        Lobby.WAITING -> WAITING
 
     lc = constRes $ resolveUser $ userE
 

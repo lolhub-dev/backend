@@ -22,13 +22,13 @@ import           Data.Time.Clock.POSIX (getPOSIXTime)
 import           Web.JWT
 
 ----- API ------
-lobbyApi :: User.SessionE -> Pipe -> ByteString -> IO ByteString
-lobbyApi session pipe = interpreter $ lobbyGqlRoot session pipe
+lobbyApi :: Pipe -> User.SessionE -> ByteString -> IO ByteString
+lobbyApi pipe session = interpreter $ lobbyGqlRoot pipe session
 
-lobbyGqlRoot :: User.SessionE
-             -> Pipe
+lobbyGqlRoot :: Pipe
+             -> User.SessionE
              -> GQLRootResolver IO USEREVENT Query Mutation Undefined
-lobbyGqlRoot session pipe =
+lobbyGqlRoot pipe session =
   GQLRootResolver { queryResolver, mutationResolver, subscriptionResolver }
   where
     queryResolver = Query { helloWorld = resolveHelloWorld }
@@ -60,16 +60,18 @@ resolveCreateLobby' session pipe args = do
   uname <- return $ unpack $ User.uname session
   maybeCreator <- run (DB.getUserByName uname) pipe
   maybeLobby <- return (Lobby.createLobby lobbyKind maybeCreator oid)
-  case maybeLobby of
-    Nothing -> return $ Left "invalid Lobby"
-    Just lobby -> case maybeCreator of
-      Nothing      -> return $ Left "invalid User"
-      Just creator -> do
-        res <- run (DB.insertLobby lobby) pipe
-        print res
-        return $ Right $ resolveLobby lobby creator
-    -- parse lobby into gql type and return here
-      where
-        cid = Lobby.creator lobby :: ObjectId
+  case maybeLobby    -- TODO: find out how to effectively apply functions on stacked Maybe cases
+     of
+      Nothing -> return $ Left "invalid Lobby"
+      Just lobby -> case maybeCreator of
+        Nothing      -> return $ Left "invalid User"
+        Just creator -> do
+          print creator
+          print lobby
+          run (DB.insertLobby lobby) pipe
+          return $ Right $ resolveLobby lobby creator
+      -- parse lobby into gql type and return here
+        where
+          cid = Lobby.creator lobby :: ObjectId
   where
     lobbyKind = toLobbyKindE $ kind args :: Lobby.LobbyKindE
