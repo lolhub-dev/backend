@@ -39,7 +39,7 @@ lobbyGqlRoot pipe session =
 
 ----- QUERY RESOLVERS -----
 resolveHelloWorld :: () -> IORes USEREVENT Text
-resolveHelloWorld = constRes "helloWorld" -- TODO: remove this, when there are other queries
+resolveHelloWorld = constRes "helloWorld" -- //TODO: remove this, when there are other queries
 
 ----- MUTATION RESOLVERS -----
 resolveCreateLobby
@@ -53,7 +53,7 @@ resolveCreateLobby session pipe args = liftEither
                         -> IO (Either String (Lobby (IOMutRes USEREVENT)))
     resolveCreateLobby' session pipe args = do
       oid <- genObjectId
-      uname <- return $ unpack $ User.uname session
+      uname <- return $ User.uname session
       maybeCreator <- run (Actions.getUserByName uname) pipe
       maybeLobby <- return $ createMaybeLobby lobbyKind maybeCreator oid
       return (maybeToEither "Invalid Session" maybeLobby)

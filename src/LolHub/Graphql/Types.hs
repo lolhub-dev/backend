@@ -42,7 +42,7 @@ fromLobbyKindE lobbyKindE = case lobbyKindE of
 
 resolveUser
   :: User.UserE
-  -> User (IOMutRes USEREVENT) -- TODO: parse different user types: so far we always return UnverifiedUser!
+  -> User (IOMutRes USEREVENT) -- //TODO: parse different user types: so far we always return UnverifiedUser!
 
 resolveUser user = UserUnverifiedUser
   $ UnverifiedUser { unverifiedUserUsername = constRes $ User.username user

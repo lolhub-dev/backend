@@ -3,6 +3,7 @@
 module LolHub.DB.User
     ( getUserByName
     , insertUser
+    , loginUser
     , UserE(..)
     , SessionE(..)
     , Action) where
@@ -18,14 +19,21 @@ import           Control.Concurrent.MonadIO
 import           GHC.Generics
 import           LolHub.Domain.User
 import           Data.Bson.Mapping
+import Data.Text
 
 col :: Collection
 col = "user"
 
-getUserByName :: String -> Action IO (Maybe UserE)
+getUserByName :: Text -> Action IO (Maybe UserE)
 getUserByName username = parseAction query
   where
     query = findOne (select ["username" =: username] col)
+
+loginUser :: Text -> Text -> Action IO (Maybe UserE)
+loginUser username password = parseAction query
+  where
+    query = findOne
+      (select ["username" =: username, "password" =: password] col)
 
 insertUser :: UserE -> Action IO (Maybe Value)
 insertUser user = Just <$> query
