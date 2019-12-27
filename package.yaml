@@ -39,6 +39,7 @@ dependencies:
 - word8
 - containers
 - MissingH
+- lifted-base
 
 library:
   source-dirs: src

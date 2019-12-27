@@ -56,7 +56,7 @@ resolveCreateLobby session pipe args = liftEither
       uname <- return $ unpack $ User.uname session
       maybeCreator <- run (Actions.getUserByName uname) pipe
       maybeLobby <- return $ createMaybeLobby lobbyKind maybeCreator oid
-      return (maybeToEither "" maybeLobby)
+      return (maybeToEither "Invalid Session" maybeLobby)
 
     lobbyKind = toLobbyKindE $ kind args :: Lobby.LobbyKindE
 

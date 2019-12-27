@@ -14,12 +14,14 @@
 module LolHub.Graphql.Resolver.UserResolver (userApi, USEREVENT) where
 
 import           Prelude hiding (exp)
+import           Core.Exception
 import           LolHub.Graphql.Types
 import           LolHub.Graphql.Query.UserQuery
 import qualified LolHub.DB.User as Action
 import qualified LolHub.Domain.User as User
 import           Core.DB.MongoUtil (run)
-import qualified Database.MongoDB as Mongo (Pipe, Failure, genObjectId)
+import qualified Database.MongoDB as Mongo (Pipe, Value, Failure, Action
+                                          , genObjectId)
 import           Data.Text
 import           Data.Morpheus (interpreter)
 import           Data.Either.Utils
@@ -30,6 +32,7 @@ import           Data.Text (Text)
 import           Control.Monad.IO.Class (liftIO)
 import           Data.ByteString.Lazy (ByteString)
 import           Data.Time.Clock.POSIX (getPOSIXTime)
+import           Control.Exception (catch, SomeException)
 
 userApi :: Mongo.Pipe -> ByteString -> IO ByteString
 userApi pipe = interpreter $ userGqlRoot pipe
@@ -85,40 +88,7 @@ resolveRegisterUser pipe args = liftEither (resolveRegisterUser' pipe args)
                    , password = password
                    , token = token
                    }
-      eitherFailureOrAction <- Action.insertUser user
-      case eitherFailureOrAction of
-        Right action -> liftIO
-          $ do
-            run action pipe
-            return
-              $ Right
-              $ UserUnverifiedUser
-              $ UnverifiedUser { unverifiedUserUsername =
-                                   constRes $ Action.username user
-                               , unverifiedUserFirstname =
-                                   constRes $ Action.firstname user
-                               , unverifiedUserLastname =
-                                   constRes $ Action.lastname user
-                               , unverifiedUserEmail =
-                                   constRes $ Action.email user
-                               , unverifiedUserToken = constRes token
-                               }
-        Left failure -> return $ Left $ show failure
-          where
-            createUser
-              :: Either Mongo.Failure (Action.Action IO (Maybe User.UserE))
-              -> Either String (User (IOMutRes USEREVENT))
-            createUser action = do
-              run action pipe
-              Right
-              $ UserUnverifiedUser
-              $ UnverifiedUser { unverifiedUserUsername =
-                                   constRes $ Action.username user
-                               , unverifiedUserFirstname =
-                                   constRes $ Action.firstname user
-                               , unverifiedUserLastname =
-                                   constRes $ Action.lastname user
-                               , unverifiedUserEmail =
-                                   constRes $ Action.email user
-                               , unverifiedUserToken = constRes token
-                               }
+      result <- run (Action.insertUser user) pipe `catch` anyException
+      return
+        $ maybeToEither "Username already taken"
+        $ result >> (return $ resolveUser user)
