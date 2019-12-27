@@ -6,9 +6,10 @@ module LolHub.Graphql.Resolver.LobbyResolver (lobbyApi, USEREVENT) where
 import           Core.DB.MongoUtil (run)
 import           LolHub.Graphql.Query.LobbyQuery
 import qualified LolHub.Domain.Lobby as Lobby
+import qualified LolHub.Domain.User as User
 import qualified LolHub.DB.Actions as DB
 import           LolHub.Graphql.Types
-import           Database.MongoDB (Pipe, Failure, genObjectId)
+import           Database.MongoDB (Pipe, Failure, genObjectId, ObjectId)
 import           Data.Text
 import           Data.ByteString.Lazy (ByteString)
 import           Control.Monad.Trans.Class (lift)
@@ -21,17 +22,20 @@ import           Data.Time.Clock.POSIX (getPOSIXTime)
 import           Web.JWT
 
 ----- API ------
-lobbyApi :: Pipe -> ByteString -> IO ByteString
-lobbyApi pipe = interpreter $ lobbyGqlRoot pipe
+lobbyApi :: User.SessionE -> Pipe -> ByteString -> IO ByteString
+lobbyApi session pipe = interpreter $ lobbyGqlRoot session pipe
 
-lobbyGqlRoot :: Pipe -> GQLRootResolver IO USEREVENT Query Mutation Undefined
-lobbyGqlRoot pipe =
+lobbyGqlRoot :: User.SessionE
+             -> Pipe
+             -> GQLRootResolver IO USEREVENT Query Mutation Undefined
+lobbyGqlRoot session pipe =
   GQLRootResolver { queryResolver, mutationResolver, subscriptionResolver }
   where
-    queryResolver = Query { queryHelloWorld = resolveHelloWorld }
+    queryResolver = Query { helloWorld = resolveHelloWorld }
 
     -------------------------------------------------------------
-    mutationResolver = Mutation { mutationCreateLobby = createLobby pipe }
+    mutationResolver =
+      Mutation { createLobby = resolveCreateLobby session pipe }
 
     subscriptionResolver = Undefined
 
@@ -40,42 +44,32 @@ resolveHelloWorld :: () -> IORes USEREVENT Text
 resolveHelloWorld = constRes "helloWorld" -- TODO: remove this, when there are other queries
 
 ----- MUTATION RESOLVERS -----
-createLobby :: Pipe -> MutationCreateLobbyArgs -> ResolveM USEREVENT IO Lobby
-createLobby pipe args = MutResolver
-  $ do
-    value <- lift (createLobby' pipe args)
-    pure ([Event [USER] (Content { contentID = 10 })], value) -- TODO:return event
+resolveCreateLobby :: User.SessionE
+                   -> Pipe
+                   -> MutationCreateLobbyArgs
+                   -> ResolveM USEREVENT IO Lobby
+resolveCreateLobby session pipe args = liftEither
+  (resolveCreateLobby' session pipe args)
 
-createLobby'
-  :: Pipe -> MutationCreateLobbyArgs -> IO (Lobby (IOMutRes USEREVENT))
-createLobby' pipe args = do
+resolveCreateLobby' :: User.SessionE
+                    -> Pipe
+                    -> MutationCreateLobbyArgs
+                    -> IO (Either String (Lobby (IOMutRes USEREVENT)))
+resolveCreateLobby' session pipe args = do
   oid <- genObjectId
-  lobby <- return
-    $ Lobby.LobbyE { Lobby._id = oid
-                   , Lobby.state = Lobby.OPEN
-                   , Lobby.kind = Lobby.PUBLIC
-                   , Lobby.creator = "userid"
-                   , Lobby.teams = Lobby.TeamsE { Lobby.blueTeam = ["user1"]
-                                                , Lobby.redTeam = ["user2"]
-                                                }
-                   }
-  return (run (DB.insertLobby lobby) pipe)
-  return
-    Lobby { lobby_id = constRes $ pack $ show $ Lobby._id lobby
-          , lobbyState = constRes WAITING
-          , lobbyKind = constRes $ mutationCreateLobbyArgsKind args
-          , lobbyCreator = constRes
-              $ UserUnverifiedUser
-              $ UnverifiedUser { unverifiedUserEmail = constRes "email"
-                               , unverifiedUserFirstname = constRes "firstname"
-                               , unverifiedUserLastname = constRes "lastname"
-                               , unverifiedUserToken = constRes "fakeToken"
-                               , unverifiedUserUsername = constRes "username"
-                               }
-          , lobbyTeams = constRes
-              $ Teams { teamsBlueTeam =
-                          constRes $ Team { teamMembers = constRes [] }
-                      , teamsRedTeam =
-                          constRes $ Team { teamMembers = constRes [] }
-                      }
-          }
+  uname <- return $ unpack $ User.uname session
+  maybeCreator <- run (DB.getUserByName uname) pipe
+  maybeLobby <- return (Lobby.createLobby lobbyKind maybeCreator oid)
+  case maybeLobby of
+    Nothing -> return $ Left "invalid Lobby"
+    Just lobby -> case maybeCreator of
+      Nothing      -> return $ Left "invalid User"
+      Just creator -> do
+        res <- run (DB.insertLobby lobby) pipe
+        print res
+        return $ Right $ resolveLobby lobby creator
+    -- parse lobby into gql type and return here
+      where
+        cid = Lobby.creator lobby :: ObjectId
+  where
+    lobbyKind = toLobbyKindE $ kind args :: Lobby.LobbyKindE

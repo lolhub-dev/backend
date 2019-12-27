@@ -44,7 +44,6 @@ encodeSession session =
         , JWT.iat = JWT.numericDate $ iat session
         , JWT.exp = JWT.numericDate $ exp session-- TODO: when we have a URI insert here
         , JWT.unregisteredClaims = JWT.ClaimsMap
-            -- $ Map.fromList [("http://example.com/is_root", (Bool True))]
             $ case claims of
               Just m  -> m
               Nothing -> Map.fromList []

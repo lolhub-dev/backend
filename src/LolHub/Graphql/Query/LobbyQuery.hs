@@ -15,15 +15,13 @@ import           GHC.Generics
 import           Data.Text
 import           Data.Morpheus.Types (GQLType(..), MutRes)
 
-data Query m = Query { queryHelloWorld :: () -> m Text }
+data Query m = Query { helloWorld :: () -> m Text }
   deriving (Generic, GQLType)
 
-data Mutation m =
-  Mutation { mutationCreateLobby
-               :: MutationCreateLobbyArgs -> m (Lobby (MutRes USEREVENT IO))
-           }
+data Mutation m = Mutation { createLobby :: MutationCreateLobbyArgs
+                                         -> m (Lobby (MutRes USEREVENT IO))
+                           }
   deriving (Generic, GQLType)
 
-data MutationCreateLobbyArgs =
-  MutationCreateLobbyArgs { mutationCreateLobbyArgsKind :: LobbyKind }
+data MutationCreateLobbyArgs = MutationCreateLobbyArgs { kind :: LobbyKind }
   deriving (Generic)
