@@ -1,6 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module LolHub.DB.User (getUserByName, insertUser, UserE(..), SessionE(..)) where
+module LolHub.DB.User
+    ( getUserByName
+    , insertUser
+    , UserE(..)
+    , SessionE(..)
+    , Action) where
 
 import           Database.MongoDB (Action, Pipe, Failure, Collection, Document
                                  , Value, access, close, connect, delete

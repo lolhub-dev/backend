@@ -15,6 +15,7 @@ import           Data.Time.Clock.POSIX
 import qualified Web.JWT as JWT
 import qualified Data.Map as Map
 import           Data.Time.Clock
+import           Data.Time.Clock.POSIX (POSIXTime)
 
 data UserE = UserE { _id :: ObjectId
                    , username :: Text
@@ -36,9 +37,16 @@ instance ToJSON SessionE
 
 instance FromJSON SessionE
 
+createSession :: Text -> POSIXTime -> SessionE
+createSession username currTime =
+  SessionE { uname = username
+           , iat = currTime
+           , exp = currTime + 1000 -- TODO: declare offset here" 
+           }
+
 encodeSession :: SessionE -> Text
 encodeSession session =
-  let claims = decode $ encode $ session :: Maybe (Map.Map Text Value)
+  let claims = decode $ encode $ session :: Maybe (Map.Map Text Value) -- hacky way to parse native haskell type into Map of Text and Value
       cs = mempty   -- mempty returns a default JWTClaimsSet
         { JWT.iss = JWT.stringOrURI "LolHub" -- TODO: read that from env file or so 
         , JWT.iat = JWT.numericDate $ iat session

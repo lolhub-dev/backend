@@ -36,11 +36,14 @@ toLobbyKindE lobbyKind = case lobbyKind of
 
 fromLobbyKindE :: Lobby.LobbyKindE -> LobbyKind
 fromLobbyKindE lobbyKindE = case lobbyKindE of
-    Lobby.PUBLIC  -> PUBLIC
-    Lobby.PRIVATE -> PRIVATE
-    Lobby.HIDDEN -> HIDDEN
+  Lobby.PUBLIC  -> PUBLIC
+  Lobby.PRIVATE -> PRIVATE
+  Lobby.HIDDEN  -> HIDDEN
 
-resolveUser :: User.UserE -> User (IOMutRes USEREVENT)
+resolveUser
+  :: User.UserE
+  -> User (IOMutRes USEREVENT) -- TODO: parse different user types: so far we always return UnverifiedUser!
+
 resolveUser user = UserUnverifiedUser
   $ UnverifiedUser { unverifiedUserUsername = constRes $ User.username user
                    , unverifiedUserFirstname = constRes $ User.firstname user
@@ -62,18 +65,24 @@ resolveTeams teamsE =
 
 resolveLobby :: Lobby.LobbyE -> User.UserE -> Lobby (IOMutRes USEREVENT)
 resolveLobby lobbyE userE =
-  Lobby { lobby_id = lid, lobbyState = ls, lobbyCreator = lc, lobbyTeams = lt, lobbyKind = lk }
+  Lobby { lobby_id = lid
+        , lobbyState = ls
+        , lobbyCreator = lc
+        , lobbyTeams = lt
+        , lobbyKind = lk
+        }
   where
     lid = constRes $ pack $ show $ Lobby._id $ lobbyE
 
     ls = constRes
       $ case Lobby.state lobbyE of
-        Lobby.OPEN   -> OPEN
-        Lobby.CLOSED -> CLOSED
-        Lobby.FULL   -> FULL
+        Lobby.OPEN    -> OPEN
+        Lobby.CLOSED  -> CLOSED
+        Lobby.FULL    -> FULL
         Lobby.WAITING -> WAITING
 
     lc = constRes $ resolveUser $ userE
 
     lt = constRes $ resolveTeams $ Lobby.teams lobbyE
+
     lk = constRes $ fromLobbyKindE $ Lobby.kind lobbyE
