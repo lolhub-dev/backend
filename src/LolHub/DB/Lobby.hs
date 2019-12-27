@@ -2,7 +2,7 @@
 
 module LolHub.DB.Lobby (insertLobby) where
 
-import           Core.DB.MongoUtil (run, mapAction)
+import           Core.DB.MongoUtil (run, parseAction)
 import           LolHub.Domain.Lobby
 import           Database.MongoDB (Action, Pipe, Failure, Collection, Document
                                  , Value, access, close, connect, delete

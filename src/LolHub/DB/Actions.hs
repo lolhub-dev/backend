@@ -1,4 +1,9 @@
-module LolHub.DB.Actions (insertLobby, insertUser, getUserByName) where
+module LolHub.DB.Actions
+    ( Action
+    , insertLobby
+    , insertUser
+    , getUserByName
+    , loginUser) where
 
 import           LolHub.DB.Lobby
 import           LolHub.DB.User
