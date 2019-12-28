@@ -3,7 +3,7 @@
 
 module LolHub.Graphql.Resolver.LobbyResolver (lobbyApi, USEREVENT) where
 
-import           Core.DB.MongoUtil (run)
+import           Core.DB.MongoUtil (run, (<<-))
 import           LolHub.Graphql.Query.LobbyQuery
 import qualified LolHub.Domain.Lobby as Lobby
 import qualified LolHub.Domain.User as User
@@ -20,11 +20,11 @@ import           Data.Morpheus.Types (Event(..), GQLRootResolver(..), IOMutRes
                                     , liftEither)
 
 ----- API ------
-lobbyApi :: Pipe -> User.SessionE -> ByteString -> IO ByteString
+lobbyApi :: Pipe -> Maybe User.SessionE -> ByteString -> IO ByteString
 lobbyApi pipe session = interpreter $ lobbyGqlRoot pipe session
 
 lobbyGqlRoot :: Pipe
-             -> User.SessionE
+             -> Maybe User.SessionE
              -> GQLRootResolver IO USEREVENT Query Mutation Undefined
 lobbyGqlRoot pipe session =
   GQLRootResolver { queryResolver, mutationResolver, subscriptionResolver }
@@ -42,19 +42,22 @@ resolveHelloWorld :: () -> IORes USEREVENT Text
 resolveHelloWorld = constRes "helloWorld" -- //TODO: remove this, when there are other queries
 
 ----- MUTATION RESOLVERS -----
-resolveCreateLobby
-  :: User.SessionE -> Pipe -> CreateLobbyArgs -> ResolveM USEREVENT IO Lobby
+resolveCreateLobby :: Maybe User.SessionE
+                   -> Pipe
+                   -> CreateLobbyArgs
+                   -> ResolveM USEREVENT IO Lobby
 resolveCreateLobby session pipe args = liftEither
   (resolveCreateLobby' session pipe args)
   where
-    resolveCreateLobby' :: User.SessionE
+    resolveCreateLobby' :: Maybe User.SessionE
                         -> Pipe
                         -> CreateLobbyArgs
                         -> IO (Either String (Lobby (IOMutRes USEREVENT)))
     resolveCreateLobby' session pipe args = do
       oid <- genObjectId
-      uname <- return $ User.uname session
-      maybeCreator <- run (Actions.getUserByName uname) pipe
+      print session
+      uname <- return $ User.uname <$> session
+      maybeCreator <- run (Actions.getUserByName <<- uname) pipe
       maybeLobby <- return $ createMaybeLobby lobbyKind maybeCreator oid
       return (maybeToEither "Invalid Session" maybeLobby)
 
