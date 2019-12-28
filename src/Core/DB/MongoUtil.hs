@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Core.DB.MongoUtil (run, encodeAction, parseAction) where
+module Core.DB.MongoUtil (run, encodeAction, parseAction, (<<-)) where
 
 import           Database.MongoDB (access, master, Action, Pipe, Document)
 import           Control.Concurrent.MonadIO
@@ -28,3 +28,11 @@ parseAction = mapReaderT maybeFromBson
 encodeAction
   :: (Bson a, Monad m, MonadIO io) => Action io (m a) -> Action io (m Document)
 encodeAction a = ((\b -> return (toBson <$> b)) =<< a)
+
+(<<-) :: (Bson a, MonadIO io)
+      => (b -> Action io (Maybe a))
+      -> Maybe b
+      -> Action io (Maybe a)
+(<<-) a b = case b of
+  Just x  -> a x
+  Nothing -> return Nothing
