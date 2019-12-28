@@ -41,8 +41,8 @@ data LobbyE = LobbyE { _id :: ObjectId
                      }
   deriving (Generic, Typeable, Show, Read, Eq, Ord)
 
-createLobby :: LobbyKindE -> User.UserE -> ObjectId -> Maybe LobbyE
-createLobby kind creator oid = do
+createLobby :: LobbyKindE -> ObjectId -> User.UserE -> Maybe LobbyE
+createLobby kind oid creator = do
   return
     LobbyE { _id = oid
            , state = WAITING
@@ -50,5 +50,8 @@ createLobby kind creator oid = do
            , creator = User._id creator
            , teams = TeamsE { blueTeam = [], redTeam = [] }
            }
+
+joinLobby :: LobbyE -> User.UserE -> LobbyE
+joinLobby lobby user = lobby -- //TODO: actually modify the lobby here...lenses ?
 
 $(deriveBson ''LobbyE)

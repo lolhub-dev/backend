@@ -3,7 +3,8 @@ module LolHub.DB.Actions
     , insertLobby
     , insertUser
     , getUserByName
-    , loginUser) where
+    , loginUser
+    , findLobby) where
 
 import           LolHub.DB.Lobby
 import           LolHub.DB.User

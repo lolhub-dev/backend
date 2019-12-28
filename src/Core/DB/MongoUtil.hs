@@ -29,10 +29,11 @@ encodeAction
   :: (Bson a, Monad m, MonadIO io) => Action io (m a) -> Action io (m Document)
 encodeAction a = ((\b -> return (toBson <$> b)) =<< a)
 
-(<<-) :: (Bson a, MonadIO io)
-      => (b -> Action io (Maybe a))
-      -> Maybe b
-      -> Action io (Maybe a)
+
+(<<-) :: (MonadIO io)
+      => (a -> Action io (Maybe b))
+      -> Maybe a
+      -> Action io (Maybe b)
 (<<-) a b = case b of
   Just x  -> a x
   Nothing -> return Nothing
