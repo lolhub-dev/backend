@@ -17,8 +17,10 @@ import           Prelude hiding (exp)
 import           Core.Exception
 import           LolHub.Graphql.Types
 import           LolHub.Graphql.Query.UserQuery
-import qualified LolHub.DB.User as Action
+import qualified LolHub.DB.User as UAction
+import qualified LolHub.DB.Verification as VAction
 import qualified LolHub.Domain.User as User
+import qualified LolHub.Domain.Verification as Verification
 import           Core.DB.MongoUtil (run)
 import qualified Database.MongoDB as Mongo (Pipe, Value, Failure, Action
                                           , genObjectId)
@@ -33,6 +35,8 @@ import           Control.Monad.IO.Class (liftIO)
 import           Data.ByteString.Lazy (ByteString)
 import           Data.Time.Clock.POSIX (getPOSIXTime)
 import           Control.Exception (catch, SomeException)
+import           Data.UUID.V4 as V4
+import           System.Random
 
 userApi :: Mongo.Pipe -> ByteString -> IO ByteString
 userApi pipe = interpreter $ userGqlRoot pipe
@@ -66,7 +70,7 @@ resolveLoginUser pipe LoginArgs { username, password } = liftEither
       -> Text
       -> IO (Either String (User (IOMutRes USEREVENT)))
     resolveLoginUser' pipe uname pword = do
-      user <- run (Action.loginUser uname pword) pipe
+      user <- run (UAction.loginUser uname pword) pipe
       return $ maybeToEither "Wrong Credentials" $ resolveUser <$> user
 
 resolveRegisterUser :: Mongo.Pipe -> RegisterArgs -> ResolveM USEREVENT IO User
@@ -91,7 +95,30 @@ resolveRegisterUser pipe args = liftEither (resolveRegisterUser' pipe args)
                    , password = password
                    , token = token
                    }
-      result <- run (Action.insertUser user) pipe `catch` anyException
+      result <- run (UAction.insertUser user) pipe `catch` anyException
       return
         $ maybeToEither "Username already taken"
         $ result >> (return $ resolveUser user)
+
+
+resolveGetToken :: Mongo.Pipe -> Text -> ResolveM USEREVENT Text
+resolveGetToken pipe username = liftEither (reolveGetToken' pipe args)
+  where 
+    resolveGetToken' :: Mongo.Pipe -> Text -> ResolveM USEREVENT Text
+    resolveGetToken'
+      pipe
+      username = do
+        oid = Mongo.genObjectId
+        token = V4.nextRandom
+        verification <- return 
+          Verification.VerificationE {
+            _id = oid,
+            username = username,
+            token = token
+          }
+        result <- run (VAction.insertVerificationToken token) pipe `catch` anyException
+        return 
+          $ maybeToEither "Something went wrong"
+          $ result >> (constRes token)
+
+        

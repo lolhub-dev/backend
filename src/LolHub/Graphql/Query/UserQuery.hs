@@ -22,6 +22,8 @@ data Query m = Query { helloWorld :: () -> m Text }
 data Mutation m =
   Mutation { register :: RegisterArgs -> m (User (MutRes USEREVENT IO))
            , login :: LoginArgs -> m (User (MutRes USEREVENT IO))
+           , getToken :: Text -> m Text,
+           , verify :: VerifyArgs -> m Text)
            }
   deriving (Generic, GQLType)
 
@@ -34,4 +36,7 @@ data RegisterArgs = RegisterArgs { username :: Text
   deriving (Generic)
 
 data LoginArgs = LoginArgs { username :: Text, password :: Text }
+  deriving (Generic)
+
+data VerifyArgs = VerifyArgs { username :: Text, summoner :: Text }
   deriving (Generic)
