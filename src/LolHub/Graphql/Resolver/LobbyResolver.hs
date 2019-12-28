@@ -16,6 +16,7 @@ import           Data.ByteString.Lazy (ByteString)
 import           Data.Morpheus (interpreter)
 import           Data.Either.Utils
 import           Text.Read
+import           Data.Bson.Mapping (toBson, fromBson)
 import           Data.Morpheus.Types (Event(..), GQLRootResolver(..), IOMutRes
                                     , IORes, ResolveM, ResolveQ, ResolveS
                                     , Undefined(..), Resolver(..), constRes
@@ -55,12 +56,11 @@ resolveCreateLobby session pipe args = liftEither
     resolveCreateLobby' session pipe args = do
       oid <- genObjectId
       uname <- return $ User.uname <$> session
-      maybeCreator <- run (Actions.getUserByName <<- uname) pipe
-      maybeLobby <- return $ (Lobby.createLobby lobbyKind oid) =<< maybeCreator
-      result <- run (Actions.insertLobby <<- maybeLobby) pipe
+      creator <- run (Actions.getUserByName <<- uname) pipe
+      lobby <- return $ (Lobby.createLobby lobbyKind oid) =<< creator
+      run (Actions.insertLobby <<- lobby) pipe
       return
-        (maybeToEither "Invalid Session"
-         $ resolveLobby <$> maybeLobby <*> maybeCreator)
+        (maybeToEither "Invalid Session" $ resolveLobby <$> lobby <*> creator)
 
     lobbyKind = toLobbyKindE $ kind args :: Lobby.LobbyKindE
 
@@ -77,11 +77,11 @@ resolveJoinLobby session pipe JoinLobbyArgs { _id } = liftEither
                       -> IO (Either String (Lobby (IOMutRes USEREVENT)))
     resolveJoinLobby' session pipe lobbyId = do
       uname <- return $ User.uname <$> session
-      maybeUser <- run (Actions.getUserByName <<- uname) pipe
-      maybeLobbyId <- return $ (readMaybe $ unpack lobbyId :: Maybe ObjectId)
-      maybeLobby <- run (Actions.findLobby <<- maybeLobbyId) pipe
-      maybeJoinedLobby <- return $ Lobby.joinLobby <$> maybeLobby <*> maybeUser
-      -- //TODO: store the lobby in the db..update ?
+      user <- run (Actions.getUserByName <<- uname) pipe
+      lid <- return $ (readMaybe $ unpack lobbyId :: Maybe ObjectId)
+      lobby <- run (Actions.findLobby <<- lid) pipe
+      lobby' <- return $ Lobby.joinLobby <$> lobby <*> user
+      print $ toBson <$> lobby'
+      run (Actions.updateLobby <<- lobby) pipe
       return
-        (maybeToEither "Invalid Session"
-         $ resolveLobby <$> maybeJoinedLobby <*> maybeUser)
+        (maybeToEither "Invalid Session" $ resolveLobby <$> lobby' <*> user)

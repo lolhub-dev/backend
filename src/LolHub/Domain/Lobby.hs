@@ -11,7 +11,9 @@ import           Data.Data (Typeable)
 import           GHC.Generics
 import           Data.Bson.Mapping
 
-type TeamE = [ObjectId]
+type Username = Text
+
+type TeamE = [Username]
 
 data TeamsE = TeamsE { blueTeam :: TeamE, redTeam :: TeamE }
   deriving (Generic, Typeable, Show, Read, Eq, Ord)
@@ -41,6 +43,8 @@ data LobbyE = LobbyE { _id :: ObjectId
                      }
   deriving (Generic, Typeable, Show, Read, Eq, Ord)
 
+$(deriveBson ''LobbyE)
+
 createLobby :: LobbyKindE -> ObjectId -> User.UserE -> Maybe LobbyE
 createLobby kind oid creator = do
   return
@@ -52,6 +56,10 @@ createLobby kind oid creator = do
            }
 
 joinLobby :: LobbyE -> User.UserE -> LobbyE
-joinLobby lobby user = lobby -- //TODO: actually modify the lobby here...lenses ?
+joinLobby
+  lobby
+  user = lobby { teams = newTeams } -- //TODO: refactor...lenses ?
+  where
+    newTeams = (teams lobby) { blueTeam = (User.username user):oldBlueTeam }
 
-$(deriveBson ''LobbyE)
+    oldBlueTeam = blueTeam $ teams $ lobby
