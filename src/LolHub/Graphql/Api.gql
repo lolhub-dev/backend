@@ -51,7 +51,7 @@ type Teams {
 }
 
 type Team {
-	members: [User!]!
+	members: [String!]!
 }
 
 enum LobbyState {

@@ -1,6 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module LolHub.DB.User (getUserByName, insertUser, UserE(..), SessionE(..)) where
+module LolHub.DB.User
+    ( getUserByName
+    , insertUser
+    , loginUser
+    , UserE(..)
+    , SessionE(..)
+    , Action) where
 
 import           Database.MongoDB (Action, Pipe, Failure, Collection, Document
                                  , Value, access, close, connect, delete
@@ -8,20 +14,28 @@ import           Database.MongoDB (Action, Pipe, Failure, Collection, Document
                                  , insertMany, master, project, rest, select
                                  , sort, hint, (=:))
 import           Control.Monad.Trans (liftIO)
-import           Core.DB.MongoUtil (run, mapAction)
+import           Core.DB.MongoUtil (run, encodeAction, parseAction)
 import           Control.Concurrent.MonadIO
 import           GHC.Generics
 import           LolHub.Domain.User
 import           Data.Bson.Mapping
-import           Control.Exception
+import Data.Text
 
 col :: Collection
 col = "user"
 
-getUserByName :: String -> Action IO (Maybe UserE)
-getUserByName username = mapAction query
+getUserByName :: Text -> Action IO (Maybe UserE)
+getUserByName username = parseAction query
   where
     query = findOne (select ["username" =: username] col)
 
-insertUser :: UserE -> IO (Either Failure (Action IO Value))
-insertUser user = try (return (insert col (toBson user)))
+loginUser :: Text -> Text -> Action IO (Maybe UserE)
+loginUser username password = parseAction query
+  where
+    query = findOne
+      (select ["username" =: username, "password" =: password] col)
+
+insertUser :: UserE -> Action IO (Maybe Value)
+insertUser user = Just <$> query
+  where
+    query = insert col (toBson user)

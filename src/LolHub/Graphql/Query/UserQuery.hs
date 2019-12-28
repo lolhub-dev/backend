@@ -7,6 +7,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 
 module LolHub.Graphql.Query.UserQuery where
 
@@ -15,26 +16,22 @@ import           GHC.Generics
 import           Data.Text
 import           Data.Morpheus.Types (GQLType, MutRes)
 
-data Query m = Query { queryHelloWorld :: () -> m Text }
+data Query m = Query { helloWorld :: () -> m Text }
   deriving (Generic, GQLType)
 
-data Mutation m = Mutation { mutationRegister :: MutationRegisterArgs
-                                              -> m (User (MutRes USEREVENT IO))
-                           , mutationLogin :: MutationLoginArgs
-                                           -> m (User (MutRes USEREVENT IO))
-                           }
+data Mutation m =
+  Mutation { register :: RegisterArgs -> m (User (MutRes USEREVENT IO))
+           , login :: LoginArgs -> m (User (MutRes USEREVENT IO))
+           }
   deriving (Generic, GQLType)
 
-data MutationRegisterArgs =
-  MutationRegisterArgs { mutationRegisterArgsUsername :: Text
-                       , mutationRegisterArgsFirstname :: Text
-                       , mutationRegisterArgsLastname :: Text
-                       , mutationRegisterArgsEmail :: Text
-                       , mutationRegisterArgsPassword :: Text
-                       }
+data RegisterArgs = RegisterArgs { username :: Text
+                                 , firstname :: Text
+                                 , lastname :: Text
+                                 , email :: Text
+                                 , password :: Text
+                                 }
   deriving (Generic)
 
-data MutationLoginArgs = MutationLoginArgs { mutationLoginArgsUsername :: Text
-                                           , mutationLoginArgsPassword :: Text
-                                           }
+data LoginArgs = LoginArgs { username :: Text, password :: Text }
   deriving (Generic)
