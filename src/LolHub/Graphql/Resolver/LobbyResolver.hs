@@ -81,7 +81,9 @@ resolveJoinLobby session pipe JoinLobbyArgs { _id } = liftEither
       lid <- return $ (readMaybe $ unpack lobbyId :: Maybe ObjectId)
       lobby <- run (Actions.findLobby <<- lid) pipe
       lobby' <- return $ Lobby.joinLobby <$> lobby <*> user
-      print $ toBson <$> lobby'
-      run (Actions.updateLobby <<- lobby) pipe
+      result <- run
+        (Actions.updateLobby <<- lobby')
+        pipe -- //TODO: doesnt work...WHY ???
+      print result
       return
         (maybeToEither "Invalid Session" $ resolveLobby <$> lobby' <*> user)
