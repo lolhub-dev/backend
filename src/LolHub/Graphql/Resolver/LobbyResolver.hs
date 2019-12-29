@@ -4,6 +4,7 @@
 
 module LolHub.Graphql.Resolver.LobbyResolver (lobbyApi, USEREVENT) where
 
+import qualified Control.Monad.Trans as MTL (lift)
 import           Core.DB.MongoUtil (run, (<<-))
 import           LolHub.Graphql.Query.LobbyQuery
 import qualified LolHub.Domain.Lobby as Lobby
@@ -18,9 +19,9 @@ import           Data.Either.Utils
 import           Text.Read
 import           Data.Bson.Mapping (toBson, fromBson)
 import           Data.Morpheus.Types (Event(..), GQLRootResolver(..), IOMutRes
-                                    , IORes, ResolveM, ResolveQ, ResolveS
-                                    , Undefined(..), Resolver(..), constRes
-                                    , liftEither)
+                                    , IOSubRes, IORes, ResolveM, ResolveQ
+                                    , ResolveS, Undefined(..), Resolver(..)
+                                    , constRes, liftEither)
 
 ----- API ------
 lobbyApi :: Pipe -> Maybe User.SessionE -> ByteString -> IO ByteString
@@ -28,7 +29,7 @@ lobbyApi pipe session = interpreter $ lobbyGqlRoot pipe session
 
 lobbyGqlRoot :: Pipe
              -> Maybe User.SessionE
-             -> GQLRootResolver IO USEREVENT Query Mutation Undefined
+             -> GQLRootResolver IO USEREVENT Query Mutation Subscription
 lobbyGqlRoot pipe session =
   GQLRootResolver { queryResolver, mutationResolver, subscriptionResolver }
   where
@@ -39,7 +40,8 @@ lobbyGqlRoot pipe session =
                                 , join = resolveJoinLobby session pipe
                                 }
 
-    subscriptionResolver = Undefined
+    subscriptionResolver =
+      Subscription { joined = resolveJoinedLobby session pipe }
 
 ----- QUERY RESOLVERS -----
 resolveHelloWorld :: () -> IORes USEREVENT Text
@@ -68,8 +70,10 @@ resolveJoinLobby :: Maybe User.SessionE
                  -> Pipe
                  -> JoinLobbyArgs
                  -> ResolveM USEREVENT IO Lobby
-resolveJoinLobby session pipe JoinLobbyArgs { _id } = liftEither
-  (resolveJoinLobby' session pipe _id)
+resolveJoinLobby session pipe JoinLobbyArgs { _id } = MutResolver
+  $ do
+    value <- liftEither (resolveJoinLobby' session pipe _id)
+    return ([Event [USER] (Content { contentID = 12 })], value)
   where
     resolveJoinLobby' :: Maybe User.SessionE
                       -> Pipe
@@ -87,3 +91,17 @@ resolveJoinLobby session pipe JoinLobbyArgs { _id } = liftEither
       print result
       return
         (maybeToEither "Invalid Session" $ resolveLobby <$> lobby' <*> user)
+
+resolveJoinedLobby :: Maybe User.SessionE
+                   -> Pipe
+                   -> JoinedLobbyArgs
+                   -> ResolveS USEREVENT IO UserJoined
+resolveJoinedLobby session pipe args =
+  SubResolver { subChannels = [USER], subResolver = subResolver }
+  where
+    subResolver (Event channel content) = MTL.lift
+      (resolveJoinedLobby' content)
+
+    resolveJoinedLobby' :: Content -> IO (UserJoined (IORes USEREVENT))
+    resolveJoinedLobby'
+      content = return UserJoined { userJoinedUsername = constRes "testuser" }
