@@ -13,7 +13,7 @@ import           Core.Network.Wai.Middleware.JWT
 import           Database.MongoDB (Action, connect, host, access, master, close
                                  , Document)
 import           Database.MongoDB.Connection (Host(..), PortID)
-import           Data.Text
+import qualified Data.Text as Text
 import           Data.Text.Lazy (toStrict)
 import           Data.Maybe
 
@@ -30,7 +30,7 @@ hostName = "127.0.0.1"
 
 getSession = do
   token <- header "Authorization"
-  return $ fromJust $ User.decodeSession =<< (toStrict <$> token)
+  return $ User.decodeSession =<< ((!!1) <$>(Text.words <$> (toStrict <$> token))) -- parse away Bearer prefix
 
 main :: IO ()
 main = do

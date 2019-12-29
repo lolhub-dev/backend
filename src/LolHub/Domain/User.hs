@@ -4,7 +4,7 @@
 
 module LolHub.Domain.User where
 
-import           Prelude hiding (exp)
+import           Prelude hiding (exp, reverse)
 import           Data.Data (Typeable)
 import           GHC.Generics
 import           Data.Bson.Mapping
@@ -55,11 +55,14 @@ decodeSession token =
        claims <- fmap JWT.claims mJwt
        unregisteredMap
          <- return $ JWT.unClaimsMap $ JWT.unregisteredClaims claims
-       uname <- Map.lookup "uname" unregisteredMap
+       uname <- pack <$> (show <$> (Map.lookup "uname" unregisteredMap))
+       parsed <- stripPrefix "String \""
+         $ reverse
+         $ pack ((\(x1:xs) -> xs) $ unpack (reverse uname))
        iat <- JWT.iat claims
        exp <- JWT.exp claims
        return
-         SessionE { uname = pack $ show uname
+         SessionE { uname = parsed
                   , iat = JWT.secondsSinceEpoch iat
                   , exp = JWT.secondsSinceEpoch exp
                   }
