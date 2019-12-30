@@ -70,22 +70,24 @@ resolveJoinLobby :: Maybe User.SessionE
                  -> Pipe
                  -> JoinLobbyArgs
                  -> ResolveM USEREVENT IO Lobby
-resolveJoinLobby session pipe JoinLobbyArgs { _id } = liftEither
-  (resolveJoinLobby' session pipe _id)
+resolveJoinLobby session pipe JoinLobbyArgs { _id, team } = liftEither
+  (resolveJoinLobby' session pipe _id team)
   where
     resolveJoinLobby' :: Maybe User.SessionE
                       -> Pipe
                       -> Text
+                      -> TeamColor
                       -> IO (Either String (Lobby (IOMutRes USEREVENT)))
-    resolveJoinLobby' session pipe lobbyId = do
+    resolveJoinLobby' session pipe lobbyId tc = do
       uname <- return $ User._uname <$> session
       user <- run (Actions.getUserByName <<- uname) pipe
       lid <- return $ (readMaybe $ unpack lobbyId :: Maybe ObjectId)
       lobby <- run (Actions.findLobby <<- lid) pipe
-      lobby' <- return $ Lobby.joinLobby <$> lobby <*> user
+      lobby' <- return
+        $ Lobby.joinLobby <$> lobby <*> user <*> (return $ toTeamColorE tc)
       result <- run
         (Actions.updateLobby <<- lobby')
-        pipe -- //TODO: doesnt work...WHY ???
+        pipe -- //TODO: magically worked, after a few commits, why...keep an eye on that !!!
       return
         (maybeToEither "Invalid Session" $ resolveLobby <$> lobby' <*> user)
 

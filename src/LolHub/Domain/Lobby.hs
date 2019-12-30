@@ -16,6 +16,17 @@ type Username = Text
 
 type TeamE = [Username]
 
+data TeamColorE = BLUE
+                | RED
+  deriving (Generic, Typeable, Show, Read, Eq, Ord)
+
+$(deriveBson ''TeamColorE)
+
+$(makeLenses ''TeamColorE)
+
+opponent RED = BLUE
+opponent BLUE = RED
+
 data TeamsE = TeamsE { _blueTeam :: TeamE, _redTeam :: TeamE }
   deriving (Generic, Typeable, Show, Read, Eq, Ord)
 
@@ -64,11 +75,22 @@ createLobby kind oid creator = do
            , _teams = TeamsE { _blueTeam = [], _redTeam = [] }
            }
 
-joinLobby :: LobbyE -> User.UserE -> LobbyE
-joinLobby lobby user = over (teams . blueTeam) (User._username user:) lobby
-{- lobby { _teams = newTeams } -- //TODO: refactor...lenses ?
+joinLobby :: LobbyE -> User.UserE -> TeamColorE -> LobbyE
+joinLobby lobby user dreamTeam
+  | isInTeam dreamTeam = lobby
+  | isInTeam $ opponent dreamTeam =
+    (join dreamTeam . (leave $ opponent dreamTeam)) lobby
+  | otherwise = join dreamTeam lobby
   where
-    newTeams = (_teams lobby) { _blueTeam = (User.username user):oldBlueTeam }
+    color tc = if tc == BLUE
+               then blueTeam
+               else redTeam
 
-    oldBlueTeam = _blueTeam $ _teams $ lobby
-    -}
+    isInTeam :: TeamColorE -> Bool
+    isInTeam tc = anyOf (teams . color tc) (elem $ User._username user) lobby
+
+    join tc = over (teams . color tc) (User._username user:)
+
+    leave tc = over
+      (teams . color tc)
+      (toListOf (folded . ifiltered (\_ x -> x /= User._username user)))

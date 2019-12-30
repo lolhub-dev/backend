@@ -33,7 +33,7 @@ data Subscription m =
 data JoinedLobbyArgs = JoinedLobbyArgs { _id :: Text }
   deriving (Generic)
 
-data JoinLobbyArgs = JoinLobbyArgs { _id :: Text }
+data JoinLobbyArgs = JoinLobbyArgs { _id :: Text, team :: TeamColor }
   deriving (Generic)
 
 data CreateLobbyArgs = CreateLobbyArgs { kind :: LobbyKind }

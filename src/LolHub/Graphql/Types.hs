@@ -40,6 +40,16 @@ fromLobbyKindE lobbyKindE = case lobbyKindE of
   Lobby.PRIVATE -> PRIVATE
   Lobby.HIDDEN  -> HIDDEN
 
+toTeamColorE :: TeamColor -> Lobby.TeamColorE
+toTeamColorE tc = case tc of
+  RED  -> Lobby.RED
+  BLUE -> Lobby.BLUE
+
+fromTeamColorE :: Lobby.TeamColorE -> TeamColor
+fromTeamColorE tcE = case tcE of
+  Lobby.RED  -> RED
+  Lobby.BLUE -> BLUE
+
 resolveUser
   :: User.UserE
   -> User (IOMutRes USEREVENT) -- //TODO: parse different user types: so far we always return UnverifiedUser!
