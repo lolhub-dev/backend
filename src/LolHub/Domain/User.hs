@@ -8,6 +8,7 @@ import           Prelude hiding (exp, reverse)
 import           Data.Data (Typeable)
 import           GHC.Generics
 import           Data.Bson.Mapping
+import           Control.Lens (makeLenses)
 import           Database.MongoDB (ObjectId)
 import           Data.Text
 import           Data.Aeson (encode, decode, ToJSON, FromJSON, Value)
@@ -29,6 +30,8 @@ data UserE = UserE { _id :: ObjectId
 
 $(deriveBson ''UserE)
 
+$(makeLenses ''UserE)
+
 data SessionE =
   SessionE { uname :: Text, iat :: NominalDiffTime, exp :: NominalDiffTime }
   deriving (Generic, Typeable, Show, Eq, Ord)
@@ -36,6 +39,8 @@ data SessionE =
 instance ToJSON SessionE
 
 instance FromJSON SessionE
+
+$(makeLenses ''SessionE)
 
 secret :: Text
 secret = "TVwTQvknx0vaQE6mTlFJPB9VSbz5iPRS"

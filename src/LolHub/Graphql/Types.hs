@@ -59,8 +59,8 @@ resolveTeam teamE = Team { teamMembers = constRes m }
 
 resolveTeams :: Lobby.TeamsE -> Teams (IOMutRes USEREVENT)
 resolveTeams teamsE =
-  Teams { teamsBlueTeam = constRes $ resolveTeam $ Lobby.blueTeam teamsE
-        , teamsRedTeam = constRes $ resolveTeam $ Lobby.redTeam teamsE
+  Teams { teamsBlueTeam = constRes $ resolveTeam $ Lobby._blueTeam teamsE
+        , teamsRedTeam = constRes $ resolveTeam $ Lobby._redTeam teamsE
         }
 
 resolveLobby :: Lobby.LobbyE -> User.UserE -> Lobby (IOMutRes USEREVENT)
@@ -75,7 +75,7 @@ resolveLobby lobbyE userE =
     lid = constRes $ pack $ show $ Lobby._id $ lobbyE
 
     ls = constRes
-      $ case Lobby.state lobbyE of
+      $ case Lobby._state lobbyE of
         Lobby.OPEN    -> OPEN
         Lobby.CLOSED  -> CLOSED
         Lobby.FULL    -> FULL
@@ -83,6 +83,6 @@ resolveLobby lobbyE userE =
 
     lc = constRes $ resolveUser $ userE
 
-    lt = constRes $ resolveTeams $ Lobby.teams lobbyE
+    lt = constRes $ resolveTeams $ Lobby._teams lobbyE
 
-    lk = constRes $ fromLobbyKindE $ Lobby.kind lobbyE
+    lk = constRes $ fromLobbyKindE $ Lobby._kind lobbyE

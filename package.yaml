@@ -39,6 +39,7 @@ dependencies:
 - word8
 - containers
 - MissingH
+- lens
 
 library:
   source-dirs: src

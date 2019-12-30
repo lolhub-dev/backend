@@ -70,10 +70,8 @@ resolveJoinLobby :: Maybe User.SessionE
                  -> Pipe
                  -> JoinLobbyArgs
                  -> ResolveM USEREVENT IO Lobby
-resolveJoinLobby session pipe JoinLobbyArgs { _id } = MutResolver
-  $ do
-    value <- liftEither (resolveJoinLobby' session pipe _id)
-    return ([Event [USER] (Content { contentID = 12 })], value)
+resolveJoinLobby session pipe JoinLobbyArgs { _id } = liftEither
+  (resolveJoinLobby' session pipe _id)
   where
     resolveJoinLobby' :: Maybe User.SessionE
                       -> Pipe
