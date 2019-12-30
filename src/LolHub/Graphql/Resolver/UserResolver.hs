@@ -83,12 +83,12 @@ resolveRegisterUser pipe args = liftEither (resolveRegisterUser' pipe args)
         <- return $ User.encodeSession $ User.createSession username currTime
       user <- return
         User.UserE { _id = oid
-                   , username = username
-                   , email = email
-                   , firstname = firstname
-                   , lastname = lastname
-                   , password = password
-                   , token = token
+                   , _username = username
+                   , _email = email
+                   , _firstname = firstname
+                   , _lastname = lastname
+                   , _password = password
+                   , _token = token
                    }
       result <- run (Action.insertUser user) pipe `catch` anyException
       return

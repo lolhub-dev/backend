@@ -57,7 +57,7 @@ resolveCreateLobby session pipe args = liftEither
   where
     resolveCreateLobby' session pipe args = do
       oid <- genObjectId
-      uname <- return $ User.uname <$> session
+      uname <- return $ User._uname <$> session
       creator <- run (Actions.getUserByName <<- uname) pipe
       lobby <- return $ (Lobby.createLobby lobbyKind oid) =<< creator
       run (Actions.insertLobby <<- lobby) pipe
@@ -78,7 +78,7 @@ resolveJoinLobby session pipe JoinLobbyArgs { _id } = liftEither
                       -> Text
                       -> IO (Either String (Lobby (IOMutRes USEREVENT)))
     resolveJoinLobby' session pipe lobbyId = do
-      uname <- return $ User.uname <$> session
+      uname <- return $ User._uname <$> session
       user <- run (Actions.getUserByName <<- uname) pipe
       lid <- return $ (readMaybe $ unpack lobbyId :: Maybe ObjectId)
       lobby <- run (Actions.findLobby <<- lid) pipe
@@ -86,7 +86,6 @@ resolveJoinLobby session pipe JoinLobbyArgs { _id } = liftEither
       result <- run
         (Actions.updateLobby <<- lobby')
         pipe -- //TODO: doesnt work...WHY ???
-      print result
       return
         (maybeToEither "Invalid Session" $ resolveLobby <$> lobby' <*> user)
 

@@ -65,10 +65,10 @@ createLobby kind oid creator = do
            }
 
 joinLobby :: LobbyE -> User.UserE -> LobbyE
-joinLobby
-  lobby
-  user = lobby { _teams = newTeams } -- //TODO: refactor...lenses ?
+joinLobby lobby user = over (teams . blueTeam) (User._username user:) lobby
+{- lobby { _teams = newTeams } -- //TODO: refactor...lenses ?
   where
     newTeams = (_teams lobby) { _blueTeam = (User.username user):oldBlueTeam }
 
     oldBlueTeam = _blueTeam $ _teams $ lobby
+    -}

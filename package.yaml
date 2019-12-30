@@ -40,6 +40,8 @@ dependencies:
 - containers
 - MissingH
 - lens
+- hspec
+- QuickCheck
 
 library:
   source-dirs: src
@@ -66,5 +68,3 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - backend
-    - hspec
-    - QuickCheck

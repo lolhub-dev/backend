@@ -45,11 +45,11 @@ resolveUser
   -> User (IOMutRes USEREVENT) -- //TODO: parse different user types: so far we always return UnverifiedUser!
 
 resolveUser user = UserUnverifiedUser
-  $ UnverifiedUser { unverifiedUserUsername = constRes $ User.username user
-                   , unverifiedUserFirstname = constRes $ User.firstname user
-                   , unverifiedUserLastname = constRes $ User.lastname user
-                   , unverifiedUserEmail = constRes $ User.email user
-                   , unverifiedUserToken = constRes $ User.token user
+  $ UnverifiedUser { unverifiedUserUsername = constRes $ User._username user
+                   , unverifiedUserFirstname = constRes $ User._firstname user
+                   , unverifiedUserLastname = constRes $ User._lastname user
+                   , unverifiedUserEmail = constRes $ User._email user
+                   , unverifiedUserToken = constRes $ User._token user
                    }
 
 resolveTeam :: Lobby.TeamE -> Team (IOMutRes USEREVENT)

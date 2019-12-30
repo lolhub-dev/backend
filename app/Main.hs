@@ -30,7 +30,8 @@ hostName = "127.0.0.1"
 
 getSession = do
   token <- header "Authorization"
-  return $ User.decodeSession =<< ((!!1) <$>(Text.words <$> (toStrict <$> token))) -- parse away Bearer prefix
+  return
+    $ User.decodeSession =<< ((!! 1) <$> (Text.words <$> (toStrict <$> token))) -- parse away Bearer prefix
 
 main :: IO ()
 main = do
