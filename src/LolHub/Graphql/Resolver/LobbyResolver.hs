@@ -4,7 +4,7 @@
 
 module LolHub.Graphql.Resolver.LobbyResolver (lobbyApi, USEREVENT) where
 
-import qualified Control.Monad.Trans as MTL (lift)
+import           Control.Monad.Trans (lift)
 import           Core.DB.MongoUtil (run, (<<-))
 import           LolHub.Graphql.Query.LobbyQuery
 import qualified LolHub.Domain.Lobby as Lobby
@@ -16,7 +16,7 @@ import           Data.Text (pack, unpack, Text)
 import           Data.ByteString.Lazy (ByteString)
 import           Data.Morpheus (interpreter)
 import           Data.Either.Utils
-import           Text.Read
+import           Text.Read hiding (lift)
 import           Data.Bson.Mapping (toBson, fromBson)
 import           Data.Morpheus.Types (Event(..), GQLRootResolver(..), IOMutRes
                                     , IOSubRes, IORes, ResolveM, ResolveQ
@@ -70,8 +70,9 @@ resolveJoinLobby :: Maybe User.SessionE
                  -> Pipe
                  -> JoinLobbyArgs
                  -> ResolveM USEREVENT IO Lobby
-resolveJoinLobby session pipe JoinLobbyArgs { _id, team } = liftEither
-  (resolveJoinLobby' session pipe _id team)
+resolveJoinLobby session pipe JoinLobbyArgs { _id, team } = do
+  value <- liftEither (resolveJoinLobby' session pipe _id team)
+  MutResolver $ return ([Event [USER] (Content { contentID = 12 })], value)
   where
     resolveJoinLobby' :: Maybe User.SessionE
                       -> Pipe
@@ -98,9 +99,10 @@ resolveJoinedLobby :: Maybe User.SessionE
 resolveJoinedLobby session pipe args =
   SubResolver { subChannels = [USER], subResolver = subResolver }
   where
-    subResolver (Event channel content) = MTL.lift
-      (resolveJoinedLobby' content)
+    subResolver (Event _ content) = lift (resolveJoinedLobby' content)
 
     resolveJoinedLobby' :: Content -> IO (UserJoined (IORes USEREVENT))
-    resolveJoinedLobby'
-      content = return UserJoined { userJoinedUsername = constRes "testuser" }
+    resolveJoinedLobby' content = return
+      UserJoined { userJoinedUsername =
+                     constRes $ pack $ show $ contentID content
+                 }
