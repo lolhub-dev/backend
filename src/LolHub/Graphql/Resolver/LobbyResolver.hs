@@ -99,7 +99,7 @@ resolveJoinedLobby :: Maybe User.SessionE
 resolveJoinedLobby session pipe args =
   SubResolver { subChannels = [USER], subResolver = subResolver }
   where
-    subResolver (Event _ content) = lift (resolveJoinedLobby' content)
+    subResolver (Event [USER] content) = lift (resolveJoinedLobby' content)
 
     resolveJoinedLobby' :: Content -> IO (UserJoined (IORes USEREVENT))
     resolveJoinedLobby' content = return

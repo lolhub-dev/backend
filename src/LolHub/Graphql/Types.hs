@@ -8,18 +8,25 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE ConstraintKinds #-}
 
 module LolHub.Graphql.Types where
 
 import qualified LolHub.Domain.User as User
 import qualified LolHub.Domain.Lobby as Lobby
 import           Data.Morpheus.Document (importGQLDocumentWithNamespace)
-import           Data.Morpheus.Types (Event(..), IOMutRes, IORes, constRes)
+import           Data.Morpheus.Types (Event(..), IOMutRes, IORes, constRes
+                                    , Resolver, WithOperation)
+import           Data.Morpheus.Types.Internal.AST
 import           Database.MongoDB (ObjectId)
 import           Data.Text
 import           Control.Concurrent.MonadIO
 
 importGQLDocumentWithNamespace "src/LolHub/Graphql/Api.gql"
+
+type Leaf (o :: OperationType) a = Resolver o () a
+
+type Graphql (o :: OperationType) a = Resolver o () (a (Resolver o () IO))
 
 data Channel = USER
   deriving (Show, Eq, Ord)
@@ -51,8 +58,9 @@ fromTeamColorE tcE = case tcE of
   Lobby.BLUE -> BLUE
 
 resolveUser
-  :: User.UserE
-  -> User (IOMutRes USEREVENT) -- //TODO: parse different user types: so far we always return UnverifiedUser!
+  :: (WithOperation o)
+  => User.UserE
+  -> Graphql o User -- //TODO: parse different user types: so far we always return UnverifiedUser!
 
 resolveUser user = UserUnverifiedUser
   $ UnverifiedUser { unverifiedUserUsername = constRes $ User._username user
