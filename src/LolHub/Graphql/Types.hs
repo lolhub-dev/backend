@@ -12,20 +12,35 @@
 
 module LolHub.Graphql.Types where
 
-import qualified LolHub.Domain.User as User
-import qualified LolHub.Domain.Lobby as Lobby
+import           Data.Text (Text)
 import           Data.Morpheus.Document (importGQLDocumentWithNamespace)
-import           Data.Morpheus.Types (Event(..), Resolver)
-import           Data.Morpheus.Types.Internal.AST
-import           Database.MongoDB (ObjectId)
-import           Data.Text
-import           Control.Concurrent.MonadIO
+import           Data.Morpheus.Types (Event(..), Resolver, WithOperation)
+import           Data.Morpheus.Types.Internal.AST (OperationType)
+import           Control.Concurrent.MonadIO (MonadIO)
+import           Control.Monad.Trans.Class (MonadTrans)
 
 importGQLDocumentWithNamespace "src/LolHub/Graphql/Types.gql"
 
-type Leaf (o :: OperationType) a = Resolver o () a
+-- | Resolve single value
+--
+type Value (o :: OperationType) a = Resolver o () IO a
 
-type Graphql (o :: OperationType) a = Resolver o () (a (Resolver o () IO))
+-- | Resolve object (which includes other fields that need their own resolvers)
+--
+type Object (o :: OperationType) a = Resolver o () IO (a (Resolver o () IO))
+
+-- | Resolve (Maybe object)
+--
+type OptionalObject (o :: OperationType) a =
+  Resolver o () IO (Maybe (a (Resolver o () IO)))
+
+-- | Resolve [object]
+--
+type ArrayObject (o :: OperationType) a =
+  Resolver o () IO [a (Resolver o () IO)]
+
+type GraphQL o =
+  (MonadIO (Resolver o () IO), WithOperation o, MonadTrans (Resolver o ()))
 
 data Channel = USER
   deriving (Show, Eq, Ord)
