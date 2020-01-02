@@ -15,27 +15,25 @@
 module LolHub.Graphql.Api.UserApi (userApi, USEREVENT) where
 
 import           Core.Exception
+import           Core.DB.MongoUtil (run)
 import           LolHub.Graphql.Types
 import           LolHub.Graphql.Resolver
 import qualified LolHub.DB.User as Action
 import qualified LolHub.Domain.User as User
-import           Core.DB.MongoUtil (run)
-import qualified Database.MongoDB as Mongo (Pipe, Value, Failure, Action
-                                          , genObjectId)
-import           Data.Text
-import           Data.Morpheus (interpreter)
+import           Control.Exception (catch)
+import           Data.Text (Text)
 import           Data.Either.Utils
+import           Data.ByteString.Lazy (ByteString)
+import           Data.Time.Clock.POSIX (getPOSIXTime)
+import           Data.Morpheus (interpreter)
+import           Data.Morpheus.Document (importGQLDocument)
 import           Data.Morpheus.Types (Event(..), GQLRootResolver(..), IOMutRes
                                     , IORes, ResolveM, ResolveQ, ResolveS
                                     , MUTATION, QUERY, SUBSCRIPTION
                                     , Resolver(..), Undefined(..), constRes
                                     , liftEither)
-import           Data.Morpheus.Document (importGQLDocument)
-import           Data.Text (Text)
-import           Control.Monad.IO.Class (liftIO)
-import           Data.ByteString.Lazy (ByteString)
-import           Data.Time.Clock.POSIX (getPOSIXTime)
-import           Control.Exception (catch, SomeException)
+import qualified Database.MongoDB as Mongo (Pipe, Value, Failure, Action
+                                          , genObjectId)
 
 importGQLDocument "src/LolHub/Graphql/Query/User.gql"
 

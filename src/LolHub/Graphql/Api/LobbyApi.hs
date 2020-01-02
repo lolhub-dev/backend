@@ -14,25 +14,24 @@
 
 module LolHub.Graphql.Api.LobbyApi (lobbyApi, USEREVENT) where
 
-import           Control.Monad.Trans (lift)
 import           Core.DB.MongoUtil (run, (<<-))
+import           LolHub.Graphql.Types
+import           LolHub.Graphql.Resolver
 import qualified LolHub.Domain.Lobby as Lobby
 import qualified LolHub.Domain.User as User
 import qualified LolHub.DB.Actions as Actions
-import           LolHub.Graphql.Types
-import           LolHub.Graphql.Resolver
-import           Database.MongoDB (Pipe, Failure, genObjectId, ObjectId)
+import           Text.Read (readMaybe)
 import           Data.Text (pack, unpack, Text)
 import           Data.ByteString.Lazy (ByteString)
+import           Data.Either.Utils
 import           Data.Morpheus.Document (importGQLDocument)
 import           Data.Morpheus (interpreter)
-import           Data.Either.Utils
-import           Text.Read hiding (lift)
-import           Data.Bson.Mapping (toBson, fromBson)
 import           Data.Morpheus.Types (Event(..), GQLRootResolver(..), IOMutRes
                                     , IOSubRes, IORes, ResolveM, ResolveQ
                                     , ResolveS, Undefined(..), Resolver(..)
-                                    , constRes, liftEither)
+                                    , liftEither)
+import           Control.Monad.Trans (lift)
+import           Database.MongoDB (Pipe, ObjectId, genObjectId)
 
 importGQLDocument "src/LolHub/Graphql/Query/Lobby.gql"
 
