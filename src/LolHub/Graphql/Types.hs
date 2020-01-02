@@ -58,27 +58,26 @@ fromTeamColorE tcE = case tcE of
   Lobby.BLUE -> BLUE
 
 resolveUser
-  :: (WithOperation o)
-  => User.UserE
-  -> Graphql o User -- //TODO: parse different user types: so far we always return UnverifiedUser!
+  :: User.UserE
+  -> User(IOMutRes USEREVENT)-- //TODO: parse different user types: so far we always return UnverifiedUser!
 
 resolveUser user = UserUnverifiedUser
-  $ UnverifiedUser { unverifiedUserUsername = constRes $ User._username user
-                   , unverifiedUserFirstname = constRes $ User._firstname user
-                   , unverifiedUserLastname = constRes $ User._lastname user
-                   , unverifiedUserEmail = constRes $ User._email user
-                   , unverifiedUserToken = constRes $ User._token user
+  $ UnverifiedUser { unverifiedUserUsername = return $ User._username user
+                   , unverifiedUserFirstname = return $ User._firstname user
+                   , unverifiedUserLastname = return $ User._lastname user
+                   , unverifiedUserEmail = return $ User._email user
+                   , unverifiedUserToken = return $ User._token user
                    }
 
 resolveTeam :: Lobby.TeamE -> Team (IOMutRes USEREVENT)
-resolveTeam teamE = Team { teamMembers = constRes m }
+resolveTeam teamE = Team { teamMembers = return m }
   where
     m = fmap (pack . show) teamE :: [Text]
 
 resolveTeams :: Lobby.TeamsE -> Teams (IOMutRes USEREVENT)
 resolveTeams teamsE =
-  Teams { teamsBlueTeam = constRes $ resolveTeam $ Lobby._blueTeam teamsE
-        , teamsRedTeam = constRes $ resolveTeam $ Lobby._redTeam teamsE
+  Teams { teamsBlueTeam = return $ resolveTeam $ Lobby._blueTeam teamsE
+        , teamsRedTeam = return $ resolveTeam $ Lobby._redTeam teamsE
         }
 
 resolveLobby :: Lobby.LobbyE -> User.UserE -> Lobby (IOMutRes USEREVENT)
@@ -90,17 +89,17 @@ resolveLobby lobbyE userE =
         , lobbyKind = lk
         }
   where
-    lid = constRes $ pack $ show $ Lobby._id $ lobbyE
+    lid = return $ pack $ show $ Lobby._id $ lobbyE
 
-    ls = constRes
+    ls = return
       $ case Lobby._state lobbyE of
         Lobby.OPEN    -> OPEN
         Lobby.CLOSED  -> CLOSED
         Lobby.FULL    -> FULL
         Lobby.WAITING -> WAITING
 
-    lc = constRes $ resolveUser $ userE
+    lc = return $ resolveUser $ userE
 
-    lt = constRes $ resolveTeams $ Lobby._teams lobbyE
+    lt = return $ resolveTeams $ Lobby._teams lobbyE
 
-    lk = constRes $ fromLobbyKindE $ Lobby._kind lobbyE
+    lk = return $ fromLobbyKindE $ Lobby._kind lobbyE

@@ -44,8 +44,8 @@ lobbyGqlRoot pipe session =
       Subscription { joined = resolveJoinedLobby session pipe }
 
 ----- QUERY RESOLVERS -----
-resolveHelloWorld :: () -> IORes USEREVENT Text
-resolveHelloWorld = constRes "helloWorld" -- //TODO: remove this, when there are other queries
+resolveHelloWorld :: IORes USEREVENT Text
+resolveHelloWorld = return "helloWorld" -- //TODO: remove this, when there are other queries
 
 ----- MUTATION RESOLVERS -----
 resolveCreateLobby :: Maybe User.SessionE
@@ -104,5 +104,5 @@ resolveJoinedLobby session pipe args =
     resolveJoinedLobby' :: Content -> IO (UserJoined (IORes USEREVENT))
     resolveJoinedLobby' content = return
       UserJoined { userJoinedUsername =
-                     constRes $ pack $ show $ contentID content
+                     return $ pack $ show $ contentID content
                  }

@@ -17,7 +17,7 @@ import           Data.Text
 import           Data.Morpheus.Types (GQLType(..), IOMutRes, IOSubRes, IORes
                                     , ResolveS)
 
-data Query m = Query { helloWorld :: () -> m Text }
+data Query m = Query { helloWorld :: m Text }
   deriving (Generic, GQLType)
 
 data Mutation m =
