@@ -27,7 +27,9 @@ import           Data.Morpheus (interpreter)
 import           Data.Either.Utils
 import           Data.Morpheus.Types (Event(..), GQLRootResolver(..), IOMutRes
                                     , IORes, ResolveM, ResolveQ, ResolveS
-                                    , Undefined(..), constRes, liftEither)
+                                    , MUTATION, QUERY, SUBSCRIPTION
+                                    , Resolver(..), Undefined(..), constRes
+                                    , liftEither)
 import           Data.Text (Text)
 import           Control.Monad.IO.Class (liftIO)
 import           Data.ByteString.Lazy (ByteString)
@@ -66,7 +68,7 @@ resolveLoginUser pipe LoginArgs { username, password } = liftEither
                       -> IO (Either String (User (IOMutRes USEREVENT)))
     resolveLoginUser' pipe uname pword = do
       user <- run (Action.loginUser uname pword) pipe
-      return $ maybeToEither "Wrong Credentials" $ resolveUser <$> user
+      pure $ maybeToEither "Wrong Credentials" $ resolveUser <$> user
 
 resolveRegisterUser :: Mongo.Pipe -> RegisterArgs -> ResolveM USEREVENT IO User
 resolveRegisterUser pipe args = liftEither (resolveRegisterUser' pipe args)

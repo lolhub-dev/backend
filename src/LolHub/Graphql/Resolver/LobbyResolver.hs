@@ -1,19 +1,29 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 module LolHub.Graphql.Resolver.LobbyResolver (lobbyApi, USEREVENT) where
 
 import           Control.Monad.Trans (lift)
 import           Core.DB.MongoUtil (run, (<<-))
-import           LolHub.Graphql.Query.LobbyQuery
 import qualified LolHub.Domain.Lobby as Lobby
 import qualified LolHub.Domain.User as User
 import qualified LolHub.DB.Actions as Actions
-import           LolHub.Graphql.Types
+import           LolHub.Graphql.Types (USEREVENT, Content(..), Channel(..))
 import           Database.MongoDB (Pipe, Failure, genObjectId, ObjectId)
 import           Data.Text (pack, unpack, Text)
 import           Data.ByteString.Lazy (ByteString)
+import           Data.Morpheus.Document (importGQLDocumentWithNamespace)
 import           Data.Morpheus (interpreter)
 import           Data.Either.Utils
 import           Text.Read hiding (lift)
@@ -23,34 +33,38 @@ import           Data.Morpheus.Types (Event(..), GQLRootResolver(..), IOMutRes
                                     , ResolveS, Undefined(..), Resolver(..)
                                     , constRes, liftEither)
 
+importGQLDocumentWithNamespace "src/LolHub/Graphql/Api.gql"
+
+importGQLDocumentWithNamespace "src/LolHub/Graphql/Query/Lobby.gql"
+
 ----- API ------
 lobbyApi :: Pipe -> Maybe User.SessionE -> ByteString -> IO ByteString
 lobbyApi pipe session = interpreter $ lobbyGqlRoot pipe session
 
 lobbyGqlRoot :: Pipe
              -> Maybe User.SessionE
-             -> GQLRootResolver IO USEREVENT Query Mutation Subscription
+             -> GQLRootResolver IO USEREVENT Undefined Mutation Subscription
 lobbyGqlRoot pipe session =
   GQLRootResolver { queryResolver, mutationResolver, subscriptionResolver }
-  where
-    queryResolver = Query { helloWorld = resolveHelloWorld }
+  -------------------------------------------------------------
 
-    -------------------------------------------------------------
-    mutationResolver = Mutation { create = resolveCreateLobby session pipe
-                                , join = resolveJoinLobby session pipe
-                                }
+    where
+      mutationResolver =
+        Mutation { mutationCreate = resolveCreateLobby session pipe
+                 , mutationJoin = resolveJoinLobby session pipe
+                 }
 
-    subscriptionResolver =
-      Subscription { joined = resolveJoinedLobby session pipe }
+      subscriptionResolver =
+        Subscription { subscriptionJoined = resolveJoinedLobby session pipe }
 
 ----- QUERY RESOLVERS -----
-resolveHelloWorld :: IORes USEREVENT Text
-resolveHelloWorld = return "helloWorld" -- //TODO: remove this, when there are other queries
+resolveHelloWorld :: IORes USEREVENT String
+resolveHelloWorld = return $ pack $ "helloWorld" -- //TODO: remove this, when there are other queries
 
 ----- MUTATION RESOLVERS -----
 resolveCreateLobby :: Maybe User.SessionE
                    -> Pipe
-                   -> CreateLobbyArgs
+                   -> MutationCreateArgs
                    -> ResolveM USEREVENT IO Lobby
 resolveCreateLobby session pipe args = liftEither
   (resolveCreateLobby' session pipe args)
@@ -68,10 +82,14 @@ resolveCreateLobby session pipe args = liftEither
 
 resolveJoinLobby :: Maybe User.SessionE
                  -> Pipe
-                 -> JoinLobbyArgs
+                 -> MutationJoinArgs
                  -> ResolveM USEREVENT IO Lobby
-resolveJoinLobby session pipe JoinLobbyArgs { _id, team } = do
-  value <- liftEither (resolveJoinLobby' session pipe _id team)
+resolveJoinLobby
+  session
+  pipe
+  MutationJoinArgs { mutationJoinArgsLobby, mutationJoinArgsTeam } = do
+  value <- liftEither
+    (resolveJoinLobby' session pipe mutationJoinArgsLobby mutationJoinArgsTeam)
   MutResolver $ return ([Event [USER] (Content { contentID = 12 })], value)
   where
     resolveJoinLobby' :: Maybe User.SessionE
@@ -94,7 +112,7 @@ resolveJoinLobby session pipe JoinLobbyArgs { _id, team } = do
 
 resolveJoinedLobby :: Maybe User.SessionE
                    -> Pipe
-                   -> JoinedLobbyArgs
+                   -> SubscriptionJoinedArgs
                    -> ResolveS USEREVENT IO UserJoined
 resolveJoinedLobby session pipe args =
   SubResolver { subChannels = [USER], subResolver = subResolver }
