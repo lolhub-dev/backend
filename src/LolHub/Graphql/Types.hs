@@ -34,6 +34,11 @@ type Object (o :: OperationType) a = Resolver o () IO (a (Resolver o () IO))
 type OptionalObject (o :: OperationType) a =
   Resolver o () IO (Maybe (a (Resolver o () IO)))
 
+-- | Resolve (Either Error object)
+--
+type EitherObject (o :: OperationType) a b =
+  Either a (Resolver o () IO (b (Resolver o () IO)))
+
 -- | Resolve [object]
 --
 type ArrayObject (o :: OperationType) a =
