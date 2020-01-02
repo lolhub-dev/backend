@@ -1,22 +1,22 @@
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
-module LolHub.Graphql.Resolver.UserResolver (userApi, USEREVENT) where
+module LolHub.Graphql.Api.UserApi (userApi, USEREVENT) where
 
-import           Prelude hiding (exp)
 import           Core.Exception
 import           LolHub.Graphql.Types
-import           LolHub.Graphql.Query.UserQuery
+import           LolHub.Graphql.Resolver
 import qualified LolHub.DB.User as Action
 import qualified LolHub.Domain.User as User
 import           Core.DB.MongoUtil (run)
@@ -30,21 +30,24 @@ import           Data.Morpheus.Types (Event(..), GQLRootResolver(..), IOMutRes
                                     , MUTATION, QUERY, SUBSCRIPTION
                                     , Resolver(..), Undefined(..), constRes
                                     , liftEither)
+import           Data.Morpheus.Document (importGQLDocument)
 import           Data.Text (Text)
 import           Control.Monad.IO.Class (liftIO)
 import           Data.ByteString.Lazy (ByteString)
 import           Data.Time.Clock.POSIX (getPOSIXTime)
 import           Control.Exception (catch, SomeException)
 
+importGQLDocument "src/LolHub/Graphql/Query/User.gql"
+
 userApi :: Mongo.Pipe -> ByteString -> IO ByteString
 userApi pipe = interpreter $ userGqlRoot pipe
 
 userGqlRoot
-  :: Mongo.Pipe -> GQLRootResolver IO USEREVENT Query Mutation Undefined
+  :: Mongo.Pipe -> GQLRootResolver IO USEREVENT Undefined Mutation Undefined
 userGqlRoot pipe =
   GQLRootResolver { queryResolver, mutationResolver, subscriptionResolver }
   where
-    queryResolver = Query { helloWorld = resolveHelloWorld }
+    queryResolver = Undefined
 
     -------------------------------------------------------------
     mutationResolver = Mutation { register = resolveRegisterUser pipe

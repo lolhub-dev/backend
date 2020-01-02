@@ -1,8 +1,9 @@
 type Mutation {
-    create(kind: LobbyKind!): Lobby!,
-    join(lobby: String!, team:TeamColor): Lobby!
+	create(kind: LobbyKind!): Lobby!, 
+	join(lobby: String!, team: TeamColor!): Lobby!
 }
 
+
 type Subscription {
-    joined(lobby: String!): String!
+	joined(lobby: String!): UserJoined!
 }

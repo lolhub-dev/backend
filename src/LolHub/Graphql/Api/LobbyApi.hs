@@ -12,18 +12,19 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
-module LolHub.Graphql.Resolver.LobbyResolver (lobbyApi, USEREVENT) where
+module LolHub.Graphql.Api.LobbyApi (lobbyApi, USEREVENT) where
 
 import           Control.Monad.Trans (lift)
 import           Core.DB.MongoUtil (run, (<<-))
 import qualified LolHub.Domain.Lobby as Lobby
 import qualified LolHub.Domain.User as User
 import qualified LolHub.DB.Actions as Actions
-import           LolHub.Graphql.Types (USEREVENT, Content(..), Channel(..))
+import           LolHub.Graphql.Types
+import           LolHub.Graphql.Resolver
 import           Database.MongoDB (Pipe, Failure, genObjectId, ObjectId)
 import           Data.Text (pack, unpack, Text)
 import           Data.ByteString.Lazy (ByteString)
-import           Data.Morpheus.Document (importGQLDocumentWithNamespace)
+import           Data.Morpheus.Document (importGQLDocument)
 import           Data.Morpheus (interpreter)
 import           Data.Either.Utils
 import           Text.Read hiding (lift)
@@ -33,9 +34,7 @@ import           Data.Morpheus.Types (Event(..), GQLRootResolver(..), IOMutRes
                                     , ResolveS, Undefined(..), Resolver(..)
                                     , constRes, liftEither)
 
-importGQLDocumentWithNamespace "src/LolHub/Graphql/Api.gql"
-
-importGQLDocumentWithNamespace "src/LolHub/Graphql/Query/Lobby.gql"
+importGQLDocument "src/LolHub/Graphql/Query/Lobby.gql"
 
 ----- API ------
 lobbyApi :: Pipe -> Maybe User.SessionE -> ByteString -> IO ByteString
@@ -49,23 +48,22 @@ lobbyGqlRoot pipe session =
   -------------------------------------------------------------
 
     where
-      mutationResolver =
-        Mutation { mutationCreate = resolveCreateLobby session pipe
-                 , mutationJoin = resolveJoinLobby session pipe
-                 }
+      queryResolver = Undefined
+
+      mutationResolver = Mutation { create = resolveCreateLobby session pipe
+                                  , join = resolveJoinLobby session pipe
+                                  }
 
       subscriptionResolver =
-        Subscription { subscriptionJoined = resolveJoinedLobby session pipe }
+        Subscription { joined = resolveJoinedLobby session pipe }
 
 ----- QUERY RESOLVERS -----
 resolveHelloWorld :: IORes USEREVENT String
-resolveHelloWorld = return $ pack $ "helloWorld" -- //TODO: remove this, when there are other queries
+resolveHelloWorld = return "helloWorld" -- //TODO: remove this, when there are other queries
 
 ----- MUTATION RESOLVERS -----
-resolveCreateLobby :: Maybe User.SessionE
-                   -> Pipe
-                   -> MutationCreateArgs
-                   -> ResolveM USEREVENT IO Lobby
+resolveCreateLobby
+  :: Maybe User.SessionE -> Pipe -> CreateArgs -> ResolveM USEREVENT IO Lobby
 resolveCreateLobby session pipe args = liftEither
   (resolveCreateLobby' session pipe args)
   where
@@ -80,16 +78,10 @@ resolveCreateLobby session pipe args = liftEither
 
     lobbyKind = toLobbyKindE $ kind args :: Lobby.LobbyKindE
 
-resolveJoinLobby :: Maybe User.SessionE
-                 -> Pipe
-                 -> MutationJoinArgs
-                 -> ResolveM USEREVENT IO Lobby
 resolveJoinLobby
-  session
-  pipe
-  MutationJoinArgs { mutationJoinArgsLobby, mutationJoinArgsTeam } = do
-  value <- liftEither
-    (resolveJoinLobby' session pipe mutationJoinArgsLobby mutationJoinArgsTeam)
+  :: Maybe User.SessionE -> Pipe -> JoinArgs -> ResolveM USEREVENT IO Lobby
+resolveJoinLobby session pipe JoinArgs { lobby, team } = do
+  value <- liftEither (resolveJoinLobby' session pipe lobby team)
   MutResolver $ return ([Event [USER] (Content { contentID = 12 })], value)
   where
     resolveJoinLobby' :: Maybe User.SessionE
@@ -112,7 +104,7 @@ resolveJoinLobby
 
 resolveJoinedLobby :: Maybe User.SessionE
                    -> Pipe
-                   -> SubscriptionJoinedArgs
+                   -> JoinedArgs
                    -> ResolveS USEREVENT IO UserJoined
 resolveJoinedLobby session pipe args =
   SubResolver { subChannels = [USER], subResolver = subResolver }
