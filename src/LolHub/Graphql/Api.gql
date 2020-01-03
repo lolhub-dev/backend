@@ -66,3 +66,10 @@ enum LobbyKind {
 	PUBLIC
 	HIDDEN
 }
+
+###### Summoner verification ######
+
+type SummonerToken {
+	token: String!
+	name: String!
+}

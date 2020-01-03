@@ -13,6 +13,7 @@ module LolHub.Graphql.Types where
 
 import qualified LolHub.Domain.User as User
 import qualified LolHub.Domain.Lobby as Lobby
+import qualified LolHub.Domain.SummonerToken as SummonerToken
 import           Data.Morpheus.Document (importGQLDocumentWithNamespace)
 import           Data.Morpheus.Types (Event(..), IOMutRes, IORes, constRes)
 import           Database.MongoDB (ObjectId)
@@ -86,3 +87,10 @@ resolveLobby lobbyE userE =
     lt = constRes $ resolveTeams $ Lobby.teams lobbyE
 
     lk = constRes $ fromLobbyKindE $ Lobby.kind lobbyE
+
+resolveSummonerToken
+  :: SummonerToken.SummonerTokenE -> SummonerToken (IOMutRes USEREVENT)
+resolveSummonerToken token =
+  SummonerToken { summonerTokenName = constRes $ SummonerToken.name token
+                , summonerTokenToken = constRes $ SummonerToken.token token
+                }

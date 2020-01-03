@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -9,34 +10,32 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE DuplicateRecordFields #-}
 
 module LolHub.Graphql.Resolver.UserResolver (userApi, USEREVENT) where
 
-import           Prelude hiding (exp)
-import           Core.Exception
-import           LolHub.Graphql.Types
-import           LolHub.Graphql.Query.UserQuery
-import qualified LolHub.DB.User as UAction
-import qualified LolHub.DB.Verification as VAction
-import qualified LolHub.Domain.User as User
-import qualified LolHub.Domain.Verification as Verification
+import           Control.Exception (SomeException, catch)
+import           Control.Monad
+import           Control.Monad.IO.Class
 import           Core.DB.MongoUtil (run)
-import qualified Database.MongoDB as Mongo (Pipe, Value, Failure, Action
-                                          , genObjectId)
-import           Data.Text
-import           Data.Morpheus (interpreter)
+import           Core.Exception
+import           Data.ByteString.Lazy (ByteString)
 import           Data.Either.Utils
+import           Data.Morpheus (interpreter)
 import           Data.Morpheus.Types (Event(..), GQLRootResolver(..), IOMutRes
                                     , IORes, ResolveM, ResolveQ, ResolveS
-                                    , Undefined(..), constRes, liftEither)
-import           Data.Text (Text)
-import           Control.Monad.IO.Class (liftIO)
-import           Data.ByteString.Lazy (ByteString)
+                                    , Undefined(..), constRes, liftEither, lift)
+import           Data.Text (Text, pack, unpack)
 import           Data.Time.Clock.POSIX (getPOSIXTime)
-import           Control.Exception (catch, SomeException)
+import           Data.UUID (UUID)
 import           Data.UUID.V4 as V4
-import           System.Random
+import qualified Database.MongoDB as Mongo (Action, Failure, Pipe, Value
+                                          , genObjectId)
+import qualified LolHub.DB.User as UAction
+import qualified LolHub.Domain.User as User
+import qualified LolHub.Domain.SummonerToken as SummonerToken
+import           LolHub.Graphql.Query.UserQuery
+import           LolHub.Graphql.Types
+import           Prelude hiding (exp)
 
 userApi :: Mongo.Pipe -> ByteString -> IO ByteString
 userApi pipe = interpreter $ userGqlRoot pipe
@@ -100,25 +99,15 @@ resolveRegisterUser pipe args = liftEither (resolveRegisterUser' pipe args)
         $ maybeToEither "Username already taken"
         $ result >> (return $ resolveUser user)
 
+resolveGetToken :: Text -> ResolveM USEREVENT IO SummonerToken
+resolveGetToken username = lift $ resolveGetToken' username
+  where
+    resolveGetToken' :: Text -> IO (SummonerToken (IOMutRes USEREVENT))
+    resolveGetToken' name = do
+      uuid <- V4.nextRandom
+      return
+        $ resolveSummonerToken
+        $ SummonerToken.SummonerTokenE { SummonerToken.name = name
+                                       , SummonerToken.token = pack $ show uuid
+                                       }
 
-resolveGetToken :: Mongo.Pipe -> Text -> ResolveM USEREVENT Text
-resolveGetToken pipe username = liftEither (reolveGetToken' pipe args)
-  where 
-    resolveGetToken' :: Mongo.Pipe -> Text -> ResolveM USEREVENT Text
-    resolveGetToken'
-      pipe
-      username = do
-        oid = Mongo.genObjectId
-        token = V4.nextRandom
-        verification <- return 
-          Verification.VerificationE {
-            _id = oid,
-            username = username,
-            token = token
-          }
-        result <- run (VAction.insertVerificationToken token) pipe `catch` anyException
-        return 
-          $ maybeToEither "Something went wrong"
-          $ result >> (constRes token)
-
-        

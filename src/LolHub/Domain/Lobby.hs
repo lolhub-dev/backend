@@ -42,13 +42,12 @@ data LobbyE = LobbyE { _id :: ObjectId
   deriving (Generic, Typeable, Show, Read, Eq, Ord)
 
 createLobby :: LobbyKindE -> User.UserE -> ObjectId -> Maybe LobbyE
-createLobby kind creator oid = do
-  return
-    LobbyE { _id = oid
-           , state = WAITING
-           , kind = kind
-           , creator = User._id creator
-           , teams = TeamsE { blueTeam = [], redTeam = [] }
-           }
+createLobby kind creator oid = return
+  LobbyE { _id = oid
+         , state = WAITING
+         , kind = kind
+         , creator = User._id creator
+         , teams = TeamsE { blueTeam = [], redTeam = [] }
+         }
 
 $(deriveBson ''LobbyE)
