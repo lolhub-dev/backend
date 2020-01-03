@@ -1,27 +1,39 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
-module LolHub.Graphql.Resolver.LobbyResolver (lobbyApi, USEREVENT) where
+module LolHub.Graphql.Api.LobbyApi (lobbyApi, USEREVENT) where
 
-import           Control.Monad.Trans (lift)
 import           Core.DB.MongoUtil (run, (<<-))
-import           LolHub.Graphql.Query.LobbyQuery
+import           LolHub.Graphql.Types
+import           LolHub.Graphql.Resolver
 import qualified LolHub.Domain.Lobby as Lobby
 import qualified LolHub.Domain.User as User
 import qualified LolHub.DB.Actions as Actions
-import           LolHub.Graphql.Types
-import           Database.MongoDB (Pipe, Failure, genObjectId, ObjectId)
+import           Text.Read (readMaybe)
 import           Data.Text (pack, unpack, Text)
 import           Data.ByteString.Lazy (ByteString)
-import           Data.Morpheus (interpreter)
 import           Data.Either.Utils
-import           Text.Read hiding (lift)
-import           Data.Bson.Mapping (toBson, fromBson)
-import           Data.Morpheus.Types (Event(..), GQLRootResolver(..), IOMutRes
+import           Data.Morpheus.Document (importGQLDocument)
+import           Data.Morpheus (interpreter)
+import           Data.Morpheus.Types (MUTATION,QUERY,SUBSCRIPTION,Event(..), GQLRootResolver(..), IOMutRes
                                     , IOSubRes, IORes, ResolveM, ResolveQ
                                     , ResolveS, Undefined(..), Resolver(..)
-                                    , constRes, liftEither)
+                                    , liftEither)
+import           Control.Monad.Trans (lift)
+import           Database.MongoDB (Pipe, ObjectId, genObjectId)
+
+importGQLDocument "src/LolHub/Graphql/Query/Lobby.gql"
 
 ----- API ------
 lobbyApi :: Pipe -> Maybe User.SessionE -> ByteString -> IO ByteString
@@ -29,32 +41,32 @@ lobbyApi pipe session = interpreter $ lobbyGqlRoot pipe session
 
 lobbyGqlRoot :: Pipe
              -> Maybe User.SessionE
-             -> GQLRootResolver IO USEREVENT Query Mutation Subscription
+             -> GQLRootResolver IO USEREVENT Undefined Mutation Subscription
 lobbyGqlRoot pipe session =
   GQLRootResolver { queryResolver, mutationResolver, subscriptionResolver }
-  where
-    queryResolver = Query { helloWorld = resolveHelloWorld }
+  -------------------------------------------------------------
 
-    -------------------------------------------------------------
-    mutationResolver = Mutation { create = resolveCreateLobby session pipe
-                                , join = resolveJoinLobby session pipe
-                                }
+    where
+      queryResolver = Undefined
 
-    subscriptionResolver =
-      Subscription { joined = resolveJoinedLobby session pipe }
+      mutationResolver = Mutation { create = resolveCreateLobby session pipe
+                                  , join = resolveJoinLobby session pipe
+                                  }
+
+      subscriptionResolver =
+        Subscription { joined = resolveJoinedLobby session pipe }
 
 ----- QUERY RESOLVERS -----
-resolveHelloWorld :: () -> IORes USEREVENT Text
-resolveHelloWorld = constRes "helloWorld" -- //TODO: remove this, when there are other queries
+resolveHelloWorld :: Value QUERY String
+resolveHelloWorld = return "helloWorld" -- //TODO: remove this, when there are other queries
 
 ----- MUTATION RESOLVERS -----
-resolveCreateLobby :: Maybe User.SessionE
-                   -> Pipe
-                   -> CreateLobbyArgs
-                   -> ResolveM USEREVENT IO Lobby
+resolveCreateLobby
+  :: Maybe User.SessionE -> Pipe -> CreateArgs -> ResolveM USEREVENT IO Lobby
 resolveCreateLobby session pipe args = liftEither
   (resolveCreateLobby' session pipe args)
   where
+    resolveCreateLobby' :: Maybe User.SessionE -> Pipe -> CreateArgs -> IO(EitherObject MUTATION USEREVENT String Lobby)
     resolveCreateLobby' session pipe args = do
       oid <- genObjectId
       uname <- return $ User._uname <$> session
@@ -66,19 +78,17 @@ resolveCreateLobby session pipe args = liftEither
 
     lobbyKind = toLobbyKindE $ kind args :: Lobby.LobbyKindE
 
-resolveJoinLobby :: Maybe User.SessionE
-                 -> Pipe
-                 -> JoinLobbyArgs
-                 -> ResolveM USEREVENT IO Lobby
-resolveJoinLobby session pipe JoinLobbyArgs { _id, team } = do
-  value <- liftEither (resolveJoinLobby' session pipe _id team)
+resolveJoinLobby
+  :: Maybe User.SessionE -> Pipe -> JoinArgs -> ResolveM USEREVENT IO Lobby
+resolveJoinLobby session pipe JoinArgs { lobby, team } = do
+  value <- liftEither (resolveJoinLobby' session pipe lobby team)
   MutResolver $ return ([Event [USER] (Content { contentID = 12 })], value)
   where
     resolveJoinLobby' :: Maybe User.SessionE
                       -> Pipe
                       -> Text
                       -> TeamColor
-                      -> IO (Either String (Lobby (IOMutRes USEREVENT)))
+                      -> IO(EitherObject MUTATION USEREVENT String Lobby)
     resolveJoinLobby' session pipe lobbyId tc = do
       uname <- return $ User._uname <$> session
       user <- run (Actions.getUserByName <<- uname) pipe
@@ -94,15 +104,15 @@ resolveJoinLobby session pipe JoinLobbyArgs { _id, team } = do
 
 resolveJoinedLobby :: Maybe User.SessionE
                    -> Pipe
-                   -> JoinedLobbyArgs
+                   -> JoinedArgs
                    -> ResolveS USEREVENT IO UserJoined
 resolveJoinedLobby session pipe args =
   SubResolver { subChannels = [USER], subResolver = subResolver }
   where
-    subResolver (Event _ content) = lift (resolveJoinedLobby' content)
+    subResolver (Event [USER] content) = lift (resolveJoinedLobby' content)
 
     resolveJoinedLobby' :: Content -> IO (UserJoined (IORes USEREVENT))
     resolveJoinedLobby' content = return
       UserJoined { userJoinedUsername =
-                     constRes $ pack $ show $ contentID content
+                     return $ pack $ show $ contentID content
                  }
