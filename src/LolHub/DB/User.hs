@@ -19,7 +19,7 @@ import           Control.Concurrent.MonadIO
 import           GHC.Generics
 import           LolHub.Domain.User
 import           Data.Bson.Mapping
-import Data.Text
+import           Data.Text
 
 col :: Collection
 col = "user"
@@ -27,13 +27,13 @@ col = "user"
 getUserByName :: Text -> Action IO (Maybe UserE)
 getUserByName username = parseAction query
   where
-    query = findOne (select ["username" =: username] col)
+    query = findOne (select ["_username" =: username] col)
 
 loginUser :: Text -> Text -> Action IO (Maybe UserE)
 loginUser username password = parseAction query
   where
     query = findOne
-      (select ["username" =: username, "password" =: password] col)
+      (select ["_username" =: username, "_password" =: password] col)
 
 insertUser :: UserE -> Action IO (Maybe Value)
 insertUser user = Just <$> query

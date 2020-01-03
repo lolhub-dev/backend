@@ -1,4 +1,4 @@
 module LolHub.Graphql.Api (lobbyApi, userApi) where
 
-import           LolHub.Graphql.Resolver.LobbyResolver
-import           LolHub.Graphql.Resolver.UserResolver
+import           LolHub.Graphql.Api.LobbyApi
+import           LolHub.Graphql.Api.UserApi

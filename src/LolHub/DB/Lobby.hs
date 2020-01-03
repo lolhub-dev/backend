@@ -8,7 +8,7 @@ import           Database.MongoDB (Action, ObjectId, Pipe, Failure, Collection
                                  , Document, Value, access, close, connect
                                  , delete, exclude, find, findOne, host, insert
                                  , upsert, insertMany, master, project, rest
-                                 , replace, select, sort, hint, (=:))
+                                 , save, replace, select, sort, hint, (=:))
 import           Data.Bson.Mapping (toBson, fromBson)
 import           Data.Text
 
@@ -18,9 +18,7 @@ col = "lobby"
 updateLobby :: LobbyE -> Action IO (Maybe ())
 updateLobby lobby = Just <$> query
   where
-    query = upsert selection $ toBson lobby
-
-    selection = select ["_id" =: (_id lobby :: ObjectId)] col
+    query = save col $ toBson lobby
 
 insertLobby :: LobbyE -> Action IO (Maybe Value)
 insertLobby lobby = Just <$> query

@@ -54,6 +54,11 @@ type Team {
 	members: [String!]!
 }
 
+enum TeamColor {
+	RED, 
+	BLUE
+}
+
 enum LobbyState {
 	WAITING
 	FULL
@@ -72,4 +77,9 @@ enum LobbyKind {
 type SummonerToken {
 	token: String!
 	name: String!
+}
+# #### SUBSCRIPTION MESSAGES #####
+
+type UserJoined {
+	username : String!
 }
