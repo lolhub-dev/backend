@@ -111,7 +111,7 @@ resolveJoinedLobby session pipe args =
   where
     subResolver (Event [USER] content) = lift (resolveJoinedLobby' content)
 
-    resolveJoinedLobby' :: Content -> IO (UserJoined (IORes USEREVENT))
+    resolveJoinedLobby' :: Content -> IO (Object QUERY USEREVENT UserJoined)
     resolveJoinedLobby' content = return
       UserJoined { userJoinedUsername =
                      return $ pack $ show $ contentID content

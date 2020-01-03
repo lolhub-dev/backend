@@ -55,8 +55,8 @@ userGqlRoot pipe =
     subscriptionResolver = Undefined
 
 ----- QUERY RESOLVERS -----
-resolveHelloWorld :: () -> IORes USEREVENT Text
-resolveHelloWorld = constRes "helloWorld" -- //TODO: remove this, when there are other queries
+resolveHelloWorld :: Value QUERY Text
+resolveHelloWorld = pure "helloWorld" -- //TODO: remove this, when there are other queries
 
 ----- MUTATION RESOLVERS -----
 resolveLoginUser :: Mongo.Pipe -> LoginArgs -> ResolveM USEREVENT IO User
