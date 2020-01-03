@@ -63,11 +63,10 @@ resolveLoginUser :: Mongo.Pipe -> LoginArgs -> ResolveM USEREVENT IO User
 resolveLoginUser pipe LoginArgs { username, password } = liftEither
   (resolveLoginUser' pipe username password)
   where
-    resolveLoginUser' -- //TODO: actually check password on login
-      :: Mongo.Pipe
-      -> Text
-      -> Text
-      -> IO (Either String (User (IOMutRes USEREVENT)))
+    resolveLoginUser' :: Mongo.Pipe
+                      -> Text
+                      -> Text
+                      -> IO (Either String (User (IOMutRes USEREVENT)))
     resolveLoginUser' pipe uname pword = do
       user <- run (UAction.loginUser uname pword) pipe
       return $ maybeToEither "Wrong Credentials" $ resolveUser <$> user
