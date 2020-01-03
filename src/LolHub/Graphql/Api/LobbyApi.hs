@@ -26,7 +26,7 @@ import           Data.ByteString.Lazy (ByteString)
 import           Data.Either.Utils
 import           Data.Morpheus.Document (importGQLDocument)
 import           Data.Morpheus (interpreter)
-import           Data.Morpheus.Types (Event(..), GQLRootResolver(..), IOMutRes
+import           Data.Morpheus.Types (MUTATION,QUERY,SUBSCRIPTION,Event(..), GQLRootResolver(..), IOMutRes
                                     , IOSubRes, IORes, ResolveM, ResolveQ
                                     , ResolveS, Undefined(..), Resolver(..)
                                     , liftEither)
@@ -57,7 +57,7 @@ lobbyGqlRoot pipe session =
         Subscription { joined = resolveJoinedLobby session pipe }
 
 ----- QUERY RESOLVERS -----
-resolveHelloWorld :: IORes USEREVENT String
+resolveHelloWorld :: Value QUERY String
 resolveHelloWorld = return "helloWorld" -- //TODO: remove this, when there are other queries
 
 ----- MUTATION RESOLVERS -----
@@ -66,6 +66,7 @@ resolveCreateLobby
 resolveCreateLobby session pipe args = liftEither
   (resolveCreateLobby' session pipe args)
   where
+    resolveCreateLobby' :: Maybe User.SessionE -> Pipe -> CreateArgs -> IO(EitherObject MUTATION USEREVENT String Lobby)
     resolveCreateLobby' session pipe args = do
       oid <- genObjectId
       uname <- return $ User._uname <$> session
@@ -87,7 +88,7 @@ resolveJoinLobby session pipe JoinArgs { lobby, team } = do
                       -> Pipe
                       -> Text
                       -> TeamColor
-                      -> IO (Either String (Lobby (IOMutRes USEREVENT)))
+                      -> IO(EitherObject MUTATION USEREVENT String Lobby)
     resolveJoinLobby' session pipe lobbyId tc = do
       uname <- return $ User._uname <$> session
       user <- run (Actions.getUserByName <<- uname) pipe

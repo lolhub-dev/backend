@@ -40,50 +40,50 @@ fromTeamColorE tcE = case tcE of
   Lobby.BLUE -> BLUE
 
 resolveUser
-  :: (GraphQL o)
+  :: (WithOperation o)
   => User.UserE
-  -> Object o User-- //TODO: parse different user types: so far we always return UnverifiedUser!
+  -> Object o USEREVENT User-- //TODO: parse different user types: so far we always return UnverifiedUser!
 
-resolveUser user = pure
-  $ UserUnverifiedUser
-  $ UnverifiedUser { unverifiedUserUsername = return $ User._username user
-                   , unverifiedUserFirstname = return $ User._firstname user
-                   , unverifiedUserLastname = return $ User._lastname user
-                   , unverifiedUserEmail = return $ User._email user
-                   , unverifiedUserToken = return $ User._token user
+resolveUser user =
+   UserUnverifiedUser
+  $ UnverifiedUser { unverifiedUserUsername = pure $ User._username user
+                   , unverifiedUserFirstname = pure $ User._firstname user
+                   , unverifiedUserLastname = pure $ User._lastname user
+                   , unverifiedUserEmail = pure $ User._email user
+                   , unverifiedUserToken = pure $ User._token user
                    }
 
-resolveTeam :: (GraphQL o) => Lobby.TeamE -> Object o Team
-resolveTeam teamE = pure Team { teamMembers = pure m }
+resolveTeam :: (WithOperation o) => Lobby.TeamE -> Object o USEREVENT Team
+resolveTeam teamE = Team { teamMembers = pure m }
   where
     m = fmap (pack . show) teamE :: [Text]
 
-resolveTeams :: (GraphQL o) => Lobby.TeamsE -> Object o Teams
-resolveTeams teamsE = return
-  Teams { teamsBlueTeam = resolveTeam $ Lobby._blueTeam teamsE
-        , teamsRedTeam = resolveTeam $ Lobby._redTeam teamsE
+resolveTeams :: (WithOperation o) => Lobby.TeamsE -> Object o USEREVENT Teams
+resolveTeams teamsE = 
+  Teams { teamsBlueTeam = pure $ resolveTeam $ Lobby._blueTeam teamsE
+        , teamsRedTeam = pure $ resolveTeam $ Lobby._redTeam teamsE
         }
 
-resolveLobby :: (GraphQL o) => Lobby.LobbyE -> User.UserE -> Object o Lobby
-resolveLobby lobbyE userE = return
-  $ Lobby { lobby_id = lid
+resolveLobby :: (WithOperation o) => Lobby.LobbyE -> User.UserE -> Object o USEREVENT Lobby
+resolveLobby lobbyE userE =
+   Lobby { lobby_id = lid
           , lobbyState = ls
           , lobbyCreator = lc
           , lobbyTeams = lt
           , lobbyKind = lk
           }
   where
-    lid = return $ pack $ show $ Lobby._id $ lobbyE
+    lid = pure $ pack $ show $ Lobby._id $ lobbyE
 
-    ls = return
+    ls = pure
       $ case Lobby._state lobbyE of
         Lobby.OPEN    -> OPEN
         Lobby.CLOSED  -> CLOSED
         Lobby.FULL    -> FULL
         Lobby.WAITING -> WAITING
 
-    lc = resolveUser $ userE
+    lc = pure $ resolveUser $ userE
 
-    lt = resolveTeams $ Lobby._teams lobbyE
+    lt = pure $ resolveTeams $ Lobby._teams lobbyE
 
-    lk = return $ fromLobbyKindE $ Lobby._kind lobbyE
+    lk = pure $ fromLobbyKindE $ Lobby._kind lobbyE

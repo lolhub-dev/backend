@@ -21,31 +21,20 @@ import           Control.Monad.Trans.Class (MonadTrans)
 
 importGQLDocumentWithNamespace "src/LolHub/Graphql/Types.gql"
 
--- | Resolve single value
---
+
 type Value (o :: OperationType) a = Resolver o () IO a
 
 -- | Resolve object (which includes other fields that need their own resolvers)
 --
-type Object (o :: OperationType) a = Resolver o () IO (a (Resolver o () IO))
+type Object (o :: OperationType) e a = a(Resolver o e IO)
 
 -- | Resolve (Maybe object)
 --
-type OptionalObject (o :: OperationType) a =
-  Resolver o () IO (Maybe (a (Resolver o () IO)))
+type OptionalObject (o :: OperationType) e a = Maybe (Object o e a)
 
 -- | Resolve (Either Error object)
 --
-type EitherObject (o :: OperationType) a b =
-  Either a (Resolver o () IO (b (Resolver o () IO)))
-
--- | Resolve [object]
---
-type ArrayObject (o :: OperationType) a =
-  Resolver o () IO [a (Resolver o () IO)]
-
-type GraphQL o =
-  (MonadIO (Resolver o () IO), WithOperation o, MonadTrans (Resolver o ()))
+type EitherObject (o :: OperationType) e a b = Either a (Object o e b)
 
 data Channel = USER
   deriving (Show, Eq, Ord)

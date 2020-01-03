@@ -27,12 +27,11 @@ import           Data.ByteString.Lazy (ByteString)
 import           Data.Time.Clock.POSIX (getPOSIXTime)
 import           Data.Morpheus (interpreter)
 import           Data.Morpheus.Document (importGQLDocument)
-import           Data.Morpheus.Types (MUTATION, QUERY, SUBSCRIPTION)
 import           Data.Morpheus.Types (Event(..), GQLRootResolver(..), IOMutRes
                                     , IORes, ResolveM, ResolveQ, ResolveS
                                     , MUTATION, QUERY, SUBSCRIPTION
                                     , Resolver(..), Undefined(..), constRes
-                                    , liftEither)
+                                    , liftEither, lift)
 import qualified Database.MongoDB as Mongo (Pipe, Value, Failure, Action
                                           , genObjectId)
 
@@ -60,22 +59,21 @@ resolveHelloWorld :: () -> IORes USEREVENT Text
 resolveHelloWorld = constRes "helloWorld" -- //TODO: remove this, when there are other queries
 
 ----- MUTATION RESOLVERS -----
-resolveLoginUser :: Mongo.Pipe -> LoginArgs -> Object MUTATION User
-resolveLoginUser pipe LoginArgs { username, password } = liftEither
-  (resolveLoginUser' pipe username password)
+resolveLoginUser :: Mongo.Pipe -> LoginArgs -> ResolveM USEREVENT IO User
+resolveLoginUser pipe LoginArgs { username, password } = liftEither $ resolveLoginUser' pipe username password
   where
     resolveLoginUser'
-      :: Mongo.Pipe -> Text -> Text -> IO (EitherObject MUTATION String User)
+      :: Mongo.Pipe -> Text -> Text -> IO (EitherObject MUTATION USEREVENT String User)
     resolveLoginUser' pipe uname pword = do
       user <- run (Action.loginUser uname pword) pipe
-      pure $ pure $ maybeToEither "Wrong Credentials" $ resolveUser <$> user
+      return $ maybeToEither "Wrong Credentials" $ resolveUser <$> user
 
 resolveRegisterUser :: Mongo.Pipe -> RegisterArgs -> ResolveM USEREVENT IO User
-resolveRegisterUser pipe args = liftEither (resolveRegisterUser' pipe args)
+resolveRegisterUser pipe args = lift (resolveRegisterUser' pipe args)
   where
     resolveRegisterUser' :: Mongo.Pipe
                          -> RegisterArgs
-                         -> IO (Either String (User (IOMutRes USEREVENT)))
+                         -> IO (Object MUTATION USEREVENT User)
     resolveRegisterUser'
       pipe
       RegisterArgs { username, firstname, lastname, email, password } = do
@@ -83,7 +81,7 @@ resolveRegisterUser pipe args = liftEither (resolveRegisterUser' pipe args)
       currTime <- getPOSIXTime
       token
         <- return $ User.encodeSession $ User.createSession username currTime
-      user <- return
+      userE <- return
         User.UserE { _id = oid
                    , _username = username
                    , _email = email
@@ -92,7 +90,8 @@ resolveRegisterUser pipe args = liftEither (resolveRegisterUser' pipe args)
                    , _password = password
                    , _token = token
                    }
-      result <- run (Action.insertUser user) pipe `catch` anyException
-      return
-        $ maybeToEither "Username already taken"
-        $ result >> (return $ resolveUser user)
+      result <- run (Action.insertUser userE) pipe `catch` anyException
+      user <- return $ resolveUser userE
+      return user
+      -- maybeToEither "Username already taken"
+        -- $ result >> (Just user)
