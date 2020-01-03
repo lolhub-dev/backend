@@ -7,6 +7,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+
 
 module LolHub.Graphql.Resolver where
 
@@ -16,6 +18,16 @@ import qualified LolHub.Domain.User as User
 import           Data.Text
 import           Data.Morpheus.Types (Event(..), IOMutRes, IORes, Resolver
                                     , WithOperation)
+
+toVerificationStatusE :: VerificationStatus -> User.VerificationStatusE
+toVerificationStatusE UNVERIFIED = User.UNVERIFIED
+toVerificationStatusE VERIFIED = User.VERIFIED
+toVerificationStatusE SUMMONER_VERIFIED = User.SUMMONER_VERIFIED
+
+toVerificationStatus :: User.VerificationStatusE -> VerificationStatus
+toVerificationStatus User.UNVERIFIED = UNVERIFIED
+toVerificationStatus User.VERIFIED = VERIFIED
+toVerificationStatus User.SUMMONER_VERIFIED = SUMMONER_VERIFIED
 
 toLobbyKindE :: LobbyKind -> Lobby.LobbyKindE
 toLobbyKindE lobbyKind = case lobbyKind of
@@ -40,37 +52,42 @@ fromTeamColorE tcE = case tcE of
   Lobby.BLUE -> BLUE
 
 resolveUser
-  :: (WithOperation o)
-  => User.UserE
-  -> Object o USEREVENT User-- //TODO: parse different user types: so far we always return UnverifiedUser!
-
+  :: (WithOperation o) => User.UserE -> Object o USEREVENT User
 resolveUser user =
-   UserUnverifiedUser
-  $ UnverifiedUser { unverifiedUserUsername = pure $ User._username user
-                   , unverifiedUserFirstname = pure $ User._firstname user
-                   , unverifiedUserLastname = pure $ User._lastname user
-                   , unverifiedUserEmail = pure $ User._email user
-                   , unverifiedUserToken = pure $ User._token user
+   User {
+     username = pure $ User._username user
+    , firstname = pure $ User._firstname user
+    , lastname = pure $ User._lastname user
+    , email = pure $ User._email user
+    , token = pure $ User._token user
+    , verified = pure $ toVerificationStatus $ User._verified user
                    }
 
+resolveUserInfo :: (WithOperation o) => User.UserE -> Object o USEREVENT UserInfo
+resolveUserInfo user = UserInfo {
+  username = pure $ User._username user
+  , firstname = pure $ User._firstname user
+  , lastname = pure $ User._lastname user
+}
+
 resolveTeam :: (WithOperation o) => Lobby.TeamE -> Object o USEREVENT Team
-resolveTeam teamE = Team { teamMembers = pure m }
+resolveTeam teamE = Team { members = pure m }
   where
     m = fmap (pack . show) teamE :: [Text]
 
 resolveTeams :: (WithOperation o) => Lobby.TeamsE -> Object o USEREVENT Teams
 resolveTeams teamsE = 
-  Teams { teamsBlueTeam = pure $ resolveTeam $ Lobby._blueTeam teamsE
-        , teamsRedTeam = pure $ resolveTeam $ Lobby._redTeam teamsE
+  Teams { blueTeam= pure $ resolveTeam $ Lobby._blueTeam teamsE
+        , redTeam = pure $ resolveTeam $ Lobby._redTeam teamsE
         }
 
 resolveLobby :: (WithOperation o) => Lobby.LobbyE -> User.UserE -> Object o USEREVENT Lobby
 resolveLobby lobbyE userE =
-   Lobby { lobby_id = lid
-          , lobbyState = ls
-          , lobbyCreator = lc
-          , lobbyTeams = lt
-          , lobbyKind = lk
+   Lobby { _id = lid
+          , state = ls
+          , creator = lc
+          , teams = lt
+          , kind = lk
           }
   where
     lid = pure $ pack $ show $ Lobby._id $ lobbyE
@@ -82,7 +99,7 @@ resolveLobby lobbyE userE =
         Lobby.FULL    -> FULL
         Lobby.WAITING -> WAITING
 
-    lc = pure $ resolveUser $ userE
+    lc = pure $ resolveUserInfo $ userE
 
     lt = pure $ resolveTeams $ Lobby._teams lobbyE
 

@@ -89,6 +89,7 @@ resolveRegisterUser pipe args = lift (resolveRegisterUser' pipe args)
                    , _lastname = lastname
                    , _password = password
                    , _token = token
+                   , _verified = User.UNVERIFIED
                    }
       result <- run (Action.insertUser userE) pipe `catch` anyException
       user <- return $ resolveUser userE

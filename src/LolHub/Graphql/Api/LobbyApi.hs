@@ -113,6 +113,6 @@ resolveJoinedLobby session pipe args =
 
     resolveJoinedLobby' :: Content -> IO (Object QUERY USEREVENT UserJoined)
     resolveJoinedLobby' content = return
-      UserJoined { userJoinedUsername =
+      UserJoined { username =
                      return $ pack $ show $ contentID content
                  }

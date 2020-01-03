@@ -9,17 +9,19 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+
 
 module LolHub.Graphql.Types where
 
 import           Data.Text (Text)
-import           Data.Morpheus.Document (importGQLDocumentWithNamespace)
+import           Data.Morpheus.Document (importGQLDocument)
 import           Data.Morpheus.Types (Event(..), Resolver, WithOperation)
 import           Data.Morpheus.Types.Internal.AST (OperationType)
 import           Control.Concurrent.MonadIO (MonadIO)
 import           Control.Monad.Trans.Class (MonadTrans)
 
-importGQLDocumentWithNamespace "src/LolHub/Graphql/Types.gql"
+importGQLDocument "src/LolHub/Graphql/Types.gql"
 
 
 type Value (o :: OperationType) a = Resolver o () IO a

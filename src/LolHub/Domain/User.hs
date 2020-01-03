@@ -18,6 +18,14 @@ import qualified Data.Map.Strict as Map
 import           Data.Time.Clock
 import           Data.Time.Clock.POSIX (POSIXTime)
 
+
+data VerificationStatusE = UNVERIFIED | VERIFIED | SUMMONER_VERIFIED
+  deriving (Generic, Typeable, Show, Read, Eq, Ord)
+
+$(deriveBson ''VerificationStatusE)
+
+$(makeLenses ''VerificationStatusE)
+
 data UserE = UserE { _id :: ObjectId
                    , _username :: Text
                    , _email :: Text
@@ -25,12 +33,14 @@ data UserE = UserE { _id :: ObjectId
                    , _lastname :: Text
                    , _password :: Text
                    , _token :: Text
+                   , _verified :: VerificationStatusE
                    }
   deriving (Generic, Typeable, Show, Read, Eq, Ord)
 
 $(deriveBson ''UserE)
 
 $(makeLenses ''UserE)
+
 
 data SessionE =
   SessionE { _uname :: Text, _iat :: NominalDiffTime, _exp :: NominalDiffTime }

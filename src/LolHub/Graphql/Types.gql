@@ -1,39 +1,29 @@
-interface User {
+interface UserBase {
+	username: String!
+	firstname: String!
+	lastname: String!
+}
+
+type User implements UserBase {
 	username: String!
 	firstname: String!
 	lastname: String!
 	email: String!
 	token: String!
+	verified: VerificationStatus!
 }
 
-type UnverifiedUser implements User {
+type UserInfo implements UserBase {
 	username: String!
 	firstname: String!
 	lastname: String!
-	email: String!
-	token: String!
 }
 
-type VerifiedUser  implements User {
-	username: String!
-	firstname: String!
-	lastname: String!
-	email: String!
-	token: String!
-	verifiedDate: Int!
+enum VerificationStatus {
+	UNVERIFIED
+	VERIFIED
+	SUMMONER_VERIFIED
 }
-
-type VerifiedSummoner  implements User {
-	username: String!
-	firstname: String!
-	lastname: String!
-	email: String!
-	token: String!
-	verifiedDate: Int!
-	summonerName: String!
-}
-
-union User = UnverifiedUser | VerifiedUser | VerifiedSummoner
 
 # #### LOBBY #####
 
@@ -41,7 +31,7 @@ type Lobby {
 	_id: String!
 	state: LobbyState!
 	kind: LobbyKind!
-	creator: User!
+	creator: UserInfo!
 	teams: Teams!
 }
 
@@ -71,6 +61,7 @@ enum LobbyKind {
 	PUBLIC
 	HIDDEN
 }
+
 
 # #### SUBSCRIPTION MESSAGES #####
 
