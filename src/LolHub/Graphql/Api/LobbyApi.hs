@@ -1,39 +1,40 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NamedFieldPuns        #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module LolHub.Graphql.Api.LobbyApi (lobbyApi, USEREVENT) where
 
-import           Core.DB.MongoUtil (run, (<<-))
-import           LolHub.Graphql.Types
-import           LolHub.Graphql.Resolver
-import qualified LolHub.Domain.Lobby as Lobby
-import qualified LolHub.Domain.User as User
-import qualified LolHub.DB.Actions as Actions
-import           Text.Read (readMaybe)
-import           Data.Text (pack, unpack, Text)
-import           Data.ByteString.Lazy (ByteString)
+import           Control.Monad.Trans     (lift)
+import           Core.DB.MongoUtil       (run, (<<-))
+import           Data.ByteString.Lazy    (ByteString)
 import           Data.Either.Utils
-import           Data.Morpheus.Document (importGQLDocument)
-import           Data.Morpheus (interpreter)
-import           Data.Morpheus.Types (MUTATION,QUERY,SUBSCRIPTION,Event(..), GQLRootResolver(..), IOMutRes
-                                    , IOSubRes, IORes, ResolveM, ResolveQ
-                                    , ResolveS, Undefined(..), Resolver(..)
-                                    , liftEither)
-import           Control.Monad.Trans (lift)
-import           Database.MongoDB (Pipe, ObjectId, genObjectId)
+import           Data.Morpheus           (interpreter)
+import           Data.Morpheus.Document  (importGQLDocumentWithNamespace)
+import           Data.Morpheus.Types     (Event (..), GQLRootResolver (..),
+                                          IOMutRes, IORes, IOSubRes, MUTATION,
+                                          QUERY, ResolveM, ResolveQ, ResolveS,
+                                          Resolver (..), SUBSCRIPTION,
+                                          Undefined (..), liftEither)
+import           Data.Text               (Text, pack, unpack)
+import           Database.MongoDB        (ObjectId, Pipe, genObjectId)
+import qualified LolHub.DB.Actions       as Actions
+import qualified LolHub.Domain.Lobby     as Lobby
+import qualified LolHub.Domain.User      as User
+import           LolHub.Graphql.Resolver
+import           LolHub.Graphql.Types
+import           Text.Read               (readMaybe)
 
-importGQLDocument "src/LolHub/Graphql/Query/Lobby.gql"
+importGQLDocumentWithNamespace "src/LolHub/Graphql/Query/Lobby.gql"
 
 ----- API ------
 lobbyApi :: Pipe -> Maybe User.SessionE -> ByteString -> IO ByteString
@@ -49,12 +50,12 @@ lobbyGqlRoot pipe session =
     where
       queryResolver = Undefined
 
-      mutationResolver = Mutation { create = resolveCreateLobby session pipe
-                                  , join = resolveJoinLobby session pipe
+      mutationResolver = Mutation { mutationCreate = resolveCreateLobby session pipe
+                                  , mutationJoin = resolveJoinLobby session pipe
                                   }
 
       subscriptionResolver =
-        Subscription { joined = resolveJoinedLobby session pipe }
+        Subscription { subscriptionJoined = resolveJoinedLobby session pipe }
 
 ----- QUERY RESOLVERS -----
 resolveHelloWorld :: Value QUERY String
@@ -62,11 +63,11 @@ resolveHelloWorld = return "helloWorld" -- //TODO: remove this, when there are o
 
 ----- MUTATION RESOLVERS -----
 resolveCreateLobby
-  :: Maybe User.SessionE -> Pipe -> CreateArgs -> ResolveM USEREVENT IO Lobby
+  :: Maybe User.SessionE -> Pipe -> MutationCreateArgs -> ResolveM USEREVENT IO Lobby
 resolveCreateLobby session pipe args = liftEither
   (resolveCreateLobby' session pipe args)
   where
-    resolveCreateLobby' :: Maybe User.SessionE -> Pipe -> CreateArgs -> IO(EitherObject MUTATION USEREVENT String Lobby)
+    resolveCreateLobby' :: Maybe User.SessionE -> Pipe -> MutationCreateArgs -> IO(EitherObject MUTATION USEREVENT String Lobby)
     resolveCreateLobby' session pipe args = do
       oid <- genObjectId
       uname <- return $ User._uname <$> session
@@ -76,12 +77,12 @@ resolveCreateLobby session pipe args = liftEither
       return
         (maybeToEither "Invalid Session" $ resolveLobby <$> lobby <*> creator)
 
-    lobbyKind = toLobbyKindE $ kind args :: Lobby.LobbyKindE
+    lobbyKind = toLobbyKindE $ mutationCreateArgsKind args :: Lobby.LobbyKindE
 
 resolveJoinLobby
-  :: Maybe User.SessionE -> Pipe -> JoinArgs -> ResolveM USEREVENT IO Lobby
-resolveJoinLobby session pipe JoinArgs { lobby, team } = do
-  value <- liftEither (resolveJoinLobby' session pipe lobby team)
+  :: Maybe User.SessionE -> Pipe -> MutationJoinArgs -> ResolveM USEREVENT IO Lobby
+resolveJoinLobby session pipe MutationJoinArgs { mutationJoinArgsLobby, mutationJoinArgsTeam } = do
+  value <- liftEither (resolveJoinLobby' session pipe mutationJoinArgsLobby mutationJoinArgsTeam)
   MutResolver $ return ([Event [USER] (Content { contentID = 12 })], value)
   where
     resolveJoinLobby' :: Maybe User.SessionE
@@ -104,7 +105,7 @@ resolveJoinLobby session pipe JoinArgs { lobby, team } = do
 
 resolveJoinedLobby :: Maybe User.SessionE
                    -> Pipe
-                   -> JoinedArgs
+                   -> SubscriptionJoinedArgs
                    -> ResolveS USEREVENT IO UserJoined
 resolveJoinedLobby session pipe args =
   SubResolver { subChannels = [USER], subResolver = subResolver }

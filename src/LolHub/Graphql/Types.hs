@@ -1,25 +1,26 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 
 module LolHub.Graphql.Types where
 
-import           Data.Text (Text)
-import           Data.Morpheus.Document (importGQLDocument)
-import           Data.Morpheus.Types (Event(..), Resolver, WithOperation)
+import           Control.Concurrent.MonadIO       (MonadIO)
+import           Control.Monad.Trans.Class        (MonadTrans)
+import           Data.Morpheus.Document           (importGQLDocument)
+import           Data.Morpheus.Types              (Event (..), Resolver,
+                                                   WithOperation)
 import           Data.Morpheus.Types.Internal.AST (OperationType)
-import           Control.Concurrent.MonadIO (MonadIO)
-import           Control.Monad.Trans.Class (MonadTrans)
+import           Data.Text                        (Text)
 
 importGQLDocument "src/LolHub/Graphql/Types.gql"
 

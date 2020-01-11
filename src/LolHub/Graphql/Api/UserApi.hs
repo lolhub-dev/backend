@@ -1,39 +1,40 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NamedFieldPuns        #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module LolHub.Graphql.Api.UserApi (userApi, USEREVENT) where
 
+import           Control.Exception       (catch)
+import           Core.DB.MongoUtil       (run)
 import           Core.Exception
-import           Core.DB.MongoUtil (run)
-import           LolHub.Graphql.Types
-import           LolHub.Graphql.Resolver
-import qualified LolHub.DB.User as Action
-import qualified LolHub.Domain.User as User
-import           Control.Exception (catch)
-import           Data.Text (Text)
+import           Data.ByteString.Lazy    (ByteString)
 import           Data.Either.Utils
-import           Data.ByteString.Lazy (ByteString)
-import           Data.Time.Clock.POSIX (getPOSIXTime)
-import           Data.Morpheus (interpreter)
-import           Data.Morpheus.Document (importGQLDocument)
-import           Data.Morpheus.Types (Event(..), GQLRootResolver(..), IOMutRes
-                                    , IORes, ResolveM, ResolveQ, ResolveS
-                                    , MUTATION, QUERY, SUBSCRIPTION
-                                    , Resolver(..), Undefined(..), constRes
-                                    , liftEither, lift)
-import qualified Database.MongoDB as Mongo (Pipe, Value, Failure, Action
-                                          , genObjectId)
+import           Data.Morpheus           (interpreter)
+import           Data.Morpheus.Document  (importGQLDocument)
+import           Data.Morpheus.Types     (Event (..), GQLRootResolver (..),
+                                          IOMutRes, IORes, MUTATION, QUERY,
+                                          ResolveM, ResolveQ, ResolveS,
+                                          Resolver (..), SUBSCRIPTION,
+                                          Undefined (..), constRes, lift,
+                                          liftEither)
+import           Data.Text               (Text)
+import           Data.Time.Clock.POSIX   (getPOSIXTime)
+import qualified Database.MongoDB        as Mongo (Action, Failure, Pipe, Value,
+                                                   genObjectId)
+import qualified LolHub.DB.User          as Action
+import qualified LolHub.Domain.User      as User
+import           LolHub.Graphql.Resolver
+import           LolHub.Graphql.Types
 
 importGQLDocument "src/LolHub/Graphql/Query/User.gql"
 

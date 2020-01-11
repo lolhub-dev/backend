@@ -12,7 +12,6 @@ import           Control.Lens (makeLenses)
 import           Database.MongoDB (ObjectId)
 import           Data.Text
 import           Data.Aeson (encode, decode, ToJSON, FromJSON, Value)
-import           Data.Time.Clock.POSIX
 import qualified Web.JWT as JWT
 import qualified Data.Map.Strict as Map
 import           Data.Time.Clock
