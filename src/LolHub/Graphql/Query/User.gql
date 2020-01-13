@@ -1,8 +1,8 @@
 type Mutation {
 	register(
 	username: String!
-	firstname: String!, 
-	lastname: String!, 
+	firstname: String!,
+	lastname: String!,
 	email: String!
 	password: String!
 	) : User!

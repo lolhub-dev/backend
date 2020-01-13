@@ -27,6 +27,9 @@ dependencies:
 - mongoDB
 - mtl
 - wai-extra
+- wai-websockets
+- websockets
+- warp
 - monadIO
 - bson-mapping
 - transformers

@@ -1,0 +1,7 @@
+type Query {
+  helloWorld : String!
+}
+
+type Subscription {
+	joined(lobby: String!): UserJoined!
+}

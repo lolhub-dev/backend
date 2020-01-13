@@ -25,11 +25,11 @@ import           Data.Text                        (Text)
 importGQLDocument "src/LolHub/Graphql/Types.gql"
 
 
-type Value (o :: OperationType) a = Resolver o () IO a
+type Value (o :: OperationType) a e = Resolver o e IO a
 
 -- | Resolve object (which includes other fields that need their own resolvers)
 --
-type Object (o :: OperationType) e a = a(Resolver o e IO)
+type Object (o :: OperationType) e a = a (Resolver o e IO)
 
 -- | Resolve (Maybe object)
 --

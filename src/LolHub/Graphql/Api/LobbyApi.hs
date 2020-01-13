@@ -14,6 +14,7 @@
 
 module LolHub.Graphql.Api.LobbyApi
         ( lobbyApi
+        , lobbyGqlRoot
         , USEREVENT
         )
 where
@@ -46,13 +47,13 @@ lobbyApi pipe session = interpreter $ lobbyGqlRoot pipe session
 lobbyGqlRoot
         :: Pipe
         -> Maybe User.SessionE
-        -> GQLRootResolver IO USEREVENT Undefined Mutation Subscription
+        -> GQLRootResolver IO USEREVENT Query Mutation Subscription
 lobbyGqlRoot pipe session = GQLRootResolver { queryResolver
                                             , mutationResolver
                                             , subscriptionResolver
                                             }
     where
-        queryResolver    = Undefined
+        queryResolver    = Query { queryHelloWorld = resolveHelloWorld }
 
         mutationResolver = Mutation
                 { mutationCreate = resolveCreateLobby session pipe
@@ -64,8 +65,8 @@ lobbyGqlRoot pipe session = GQLRootResolver { queryResolver
                 }
 
 ----- QUERY RESOLVERS -----
-resolveHelloWorld :: Value QUERY String
-resolveHelloWorld = return "helloWorld" -- //TODO: remove this, when there are other queries
+resolveHelloWorld :: Value QUERY Text USEREVENT
+resolveHelloWorld = return $ pack "helloWorld" -- //TODO: remove this, when there are other queries
 
 ----- MUTATION RESOLVERS -----
 resolveCreateLobby
