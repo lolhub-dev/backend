@@ -18,6 +18,7 @@ module LolHub.Graphql.Api.LobbyApi
         , USEREVENT
         )
 where
+
 import           Control.Monad.Trans     (lift)
 import           Core.DB.MongoUtil       (run, (<<-))
 import           Data.ByteString.Lazy    (ByteString)
@@ -54,12 +55,10 @@ lobbyGqlRoot pipe session = GQLRootResolver { queryResolver
                                             }
     where
         queryResolver    = Query { queryHelloWorld = resolveHelloWorld }
-
         mutationResolver = Mutation
                 { mutationCreate = resolveCreateLobby session pipe
                 , mutationJoin   = resolveJoinLobby session pipe
                 }
-
         subscriptionResolver = Subscription
                 { subscriptionJoined = resolveJoinedLobby session pipe
                 }
@@ -83,10 +82,10 @@ resolveCreateLobby session pipe args = liftEither
                 -> MutationCreateArgs
                 -> IO (EitherObject MUTATION USEREVENT String Lobby)
         resolveCreateLobby' session pipe args = do
-                oid     <- genObjectId
-                uname   <- return $ User._uname <$> session
+                oid <- genObjectId
+                let uname = User._uname <$> session
                 creator <- run (Actions.getUserByName <<- uname) pipe
-                lobby <- return $ (Lobby.createLobby lobbyKind oid) =<< creator
+                let lobby = Lobby.createLobby lobbyKind oid =<< creator
                 run (Actions.insertLobby <<- lobby) pipe
                 return
                         (   maybeToEither "Invalid Session"
@@ -94,7 +93,6 @@ resolveCreateLobby session pipe args = liftEither
                         <$> lobby
                         <*> creator
                         )
-
         lobbyKind =
                 toLobbyKindE $ mutationCreateArgsKind args :: Lobby.LobbyKindE
 
@@ -124,16 +122,13 @@ resolveJoinLobby session pipe MutationJoinArgs { mutationJoinArgsLobby, mutation
                 -> TeamColor
                 -> IO (EitherObject MUTATION USEREVENT String Lobby)
         resolveJoinLobby' session pipe lobbyId tc = do
-                uname  <- return $ User._uname <$> session
-                user   <- run (Actions.getUserByName <<- uname) pipe
-                lid <- return $ (readMaybe $ unpack lobbyId :: Maybe ObjectId)
-                lobby  <- run (Actions.findLobby <<- lid) pipe
-                lobby' <-
-                        return
-                        $   Lobby.joinLobby
-                        <$> lobby
-                        <*> user
-                        <*> (return $ toTeamColorE tc)
+                let uname = User._uname <$> session
+                user <- run (Actions.getUserByName <<- uname) pipe
+                let lid = readMaybe $ unpack lobbyId :: Maybe ObjectId
+                lobby <- run (Actions.findLobby <<- lid) pipe
+                let
+                        lobby' = Lobby.joinLobby <$> lobby <*> user <*> return
+                                (toTeamColorE tc)
                 result <- run (Actions.updateLobby <<- lobby') pipe -- //TODO: magically worked, after a few commits, why...keep an eye on that !!!
                 return
                         (   maybeToEither "Invalid Session"
@@ -152,7 +147,6 @@ resolveJoinedLobby session pipe args = SubResolver { subChannels = [USER]
                                                    }
     where
         subResolver (Event [USER] content) = lift (resolveJoinedLobby' content)
-
         resolveJoinedLobby' :: Content -> IO (Object QUERY USEREVENT UserJoined)
         resolveJoinedLobby' content = return UserJoined
                 { username = return $ pack $ show $ contentID content

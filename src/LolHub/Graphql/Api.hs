@@ -3,6 +3,7 @@ module LolHub.Graphql.Api
         , userApi
         , lobbyGqlRoot
         , subscriptionRoot
+        , subscriptionApi
         )
 where
 

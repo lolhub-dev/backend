@@ -14,6 +14,8 @@
 
 
 module LolHub.Graphql.Api.SubscriptionApi where
+import           Data.ByteString.Lazy   (ByteString)
+import           Data.Morpheus          (interpreter)
 import           Data.Morpheus.Document (importGQLDocument)
 import           Data.Morpheus.Types    (Event (..), GQLRootResolver (..),
                                          IOMutRes, IORes, IOSubRes, MUTATION,
@@ -25,6 +27,9 @@ import           LolHub.Graphql.Types
 
 importGQLDocument "src/LolHub/Graphql/Query/Subscription.gql"
 
+
+subscriptionApi :: ByteString -> IO ByteString
+subscriptionApi = interpreter subscriptionRoot
 
 subscriptionRoot :: GQLRootResolver IO USEREVENT Query Undefined Subscription
 subscriptionRoot = GQLRootResolver { queryResolver
