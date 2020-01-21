@@ -52,8 +52,6 @@ main = do
         let wsApp    = gqlSocketApp subscriptionRoot
         state   <- initGQLState
         httpApp <- sapp state pipe
-                                      -- fetchHero >>= print
-                                      -- fetUser (interpreter gqlRoot state) >>= print
         Warp.runSettings settings $ WaiWs.websocketsOr
                 defaultConnectionOptions
                 (wsApp state)
