@@ -54,7 +54,10 @@ userGqlRoot pipe =
     -------------------------------------------------------------
     mutationResolver =
       Mutation
-        {register = resolveRegisterUser pipe, login = resolveLoginUser pipe}
+        { register = resolveRegisterUser pipe
+        , login = resolveLoginUser pipe
+        , generateToken = resolveGenerateToken
+        }
     subscriptionResolver = Undefined
 
 ----- QUERY RESOLVERS -----
@@ -105,14 +108,34 @@ resolveRegisterUser pipe args = lift (resolveRegisterUser' pipe args)
       user <- return $ resolveUser userE
       return user
       -- maybeToEither "Username already taken"
-        -- $ result >> (Just user)  
+        -- $ result >> (Just user)
 
-resolveGetToken :: Text -> ResolveM USEREVENT IO SummonerToken
-resolveGetToken username = lift $ resolveGetToken' username
+resolveGenerateToken :: GenerateTokenArgs -> ResolveM USEREVENT IO SummonerToken
+resolveGenerateToken GenerateTokenArgs {summonername} =
+  lift $ resolveGenerateToken' summonername
   where
-    resolveGetToken' :: Text -> IO (SummonerToken (IOMutRes USEREVENT))
-    resolveGetToken' name = do
+    resolveGenerateToken' :: Text -> IO (SummonerToken (IOMutRes USEREVENT))
+    resolveGenerateToken' name = do
       uuid <- V4.nextRandom
+      -- TODO: store SummonerToken record in session
       return $
         resolveSummonerToken $
-        User.SummonerTokenE {User._sname = name, User._vtoken = pack $ show uuid}
+        User.SummonerTokenE
+          {User._sname = name, User._vtoken = pack $ show uuid}
+
+resolveVerify ::
+     Maybe User.SessionE
+  -> Mongo.Pipe
+  -> VerifyArgs
+  -> ResolveM USEREVENT IO VerifiedSummoner
+resolveVerify pipe session VerifyArgs {summtoken} =
+  lift $ resolveVerify' token name
+  where
+    token = pack $ summonerTokenToken summtoken
+    name = pack $ summonerTokenName summtoken
+    resolveVerify' ::
+         Text
+      -> Text
+      -> IO (EitherObject MUTATION USEREVENT String VerifiedSummoner)
+    resolveVerify' token name = do
+      return ()

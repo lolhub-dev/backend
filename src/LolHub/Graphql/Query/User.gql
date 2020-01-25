@@ -1,13 +1,12 @@
 type Mutation {
-	register(
-	username: String!
-	firstname: String!, 
-	lastname: String!, 
-	email: String!
-	password: String!
-	) : User!
-	login(
-	username: String!
-	password: String!
-	) : User!
+  register(
+    username: String!
+    firstname: String!
+    lastname: String!
+    email: String!
+    password: String!
+  ): User!
+  login(username: String!, password: String!): User!
+  generateToken(summonername: String!): SummonerToken!
+  verify(token: String!): VerifiedSummoner!
 }
