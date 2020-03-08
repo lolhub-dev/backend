@@ -25,6 +25,7 @@ import qualified Network.Wai.Handler.Warp             as Warp
 import qualified Network.Wai.Handler.WebSockets       as WaiWs
 import           Network.Wai.Middleware.RequestLogger
 import           Network.WebSockets                   (defaultConnectionOptions)
+
 import           System.Exit
 import           Web.Scotty
 
@@ -37,7 +38,7 @@ portMongo = 37017
 
 -- | returns the host IP for MongoDB
 hostName :: String
-hostName = "127.0.0.1"
+hostName = "localhost"
 
 getSession = do
         token <- header "Authorization"

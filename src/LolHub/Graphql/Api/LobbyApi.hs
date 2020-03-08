@@ -29,7 +29,8 @@ import           Data.Morpheus.Types     (Event (..), GQLRootResolver (..),
                                           IOMutRes, IORes, IOSubRes, MUTATION,
                                           QUERY, ResolveM, ResolveQ, ResolveS,
                                           Resolver (..), SUBSCRIPTION,
-                                          Undefined (..), liftEither)
+                                          Undefined (..), liftEither, publish,
+                                          subscribe)
 import           Data.Text               (Text, pack, unpack)
 import           Database.MongoDB        (ObjectId, Pipe, genObjectId)
 import qualified LolHub.DB.Actions       as Actions
@@ -103,17 +104,14 @@ resolveJoinLobby
         -> ResolveM USEREVENT IO Lobby
 resolveJoinLobby session pipe MutationJoinArgs { mutationJoinArgsLobby, mutationJoinArgsTeam }
         = do
-                value <- liftEither
+                publish [Event [USER] (Content { contentID = 12 })]
+                liftEither
                         (resolveJoinLobby' session
                                            pipe
                                            mutationJoinArgsLobby
                                            mutationJoinArgsTeam
                         )
-                MutResolver
-                        $ return
-                                  ( [Event [USER] (Content { contentID = 12 })]
-                                  , value
-                                  )
+
     where
         resolveJoinLobby'
                 :: Maybe User.SessionE
@@ -142,11 +140,11 @@ resolveJoinedLobby
         -> Pipe
         -> SubscriptionJoinedArgs
         -> ResolveS USEREVENT IO UserJoined
-resolveJoinedLobby session pipe args = SubResolver { subChannels = [USER]
-                                                   , subResolver = subResolver
-                                                   }
+resolveJoinedLobby session pipe args =
+        subscribe [USER] $ pure $ \(Event _ content) -> subResolver content
+
     where
-        subResolver (Event [USER] content) = lift (resolveJoinedLobby' content)
+        subResolver content = lift (resolveJoinedLobby' content)
         resolveJoinedLobby' :: Content -> IO (Object QUERY USEREVENT UserJoined)
         resolveJoinedLobby' content = return UserJoined
                 { username = return $ pack $ show $ contentID content

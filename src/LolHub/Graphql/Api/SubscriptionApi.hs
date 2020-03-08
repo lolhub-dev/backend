@@ -21,7 +21,8 @@ import           Data.Morpheus.Types    (Event (..), GQLRootResolver (..),
                                          IOMutRes, IORes, IOSubRes, MUTATION,
                                          QUERY, ResolveM, ResolveQ, ResolveS,
                                          Resolver (..), SUBSCRIPTION,
-                                         Undefined (..), lift, liftEither)
+                                         Undefined (..), lift, liftEither,
+                                         subscribe)
 import           Data.Text              (Text, pack, unpack)
 import           LolHub.Graphql.Types
 
@@ -46,11 +47,10 @@ resolveHelloWorld :: Value QUERY Text USEREVENT
 resolveHelloWorld = return $ pack "helloWorld" -- //TODO: remove this, when there are other queries
 
 resolveJoinedLobby :: joinedArgs -> ResolveS USEREVENT IO UserJoined
-resolveJoinedLobby args = SubResolver { subChannels = [USER]
-                                      , subResolver = subResolver
-                                      }
+resolveJoinedLobby args = subscribe [USER] $ pure $ \(Event _ content) ->
+        subResolver content
     where
-        subResolver (Event [USER] content) = lift (resolveJoinedLobby' content)
+        subResolver content = lift (resolveJoinedLobby' content)
 
         resolveJoinedLobby' :: Content -> IO (Object QUERY USEREVENT UserJoined)
         resolveJoinedLobby' content = return UserJoined
