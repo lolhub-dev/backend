@@ -15,10 +15,7 @@ import           Database.MongoDB                     (Action, Document, Pipe,
                                                        host, master)
 import           Database.MongoDB.Connection          (Host (..), PortID)
 import qualified LolHub.Domain.User                   as User
-import           LolHub.Graphql.Api                   (lobbyApi, lobbyGqlRoot,
-                                                       subscriptionApi,
-                                                       subscriptionRoot,
-                                                       userApi)
+import           LolHub.Graphql.Api                   (api, gqlRoot)
 import           LolHub.Graphql.Types
 import qualified Network.Wai                          as Wai
 import qualified Network.Wai.Handler.Warp             as Warp
@@ -50,7 +47,7 @@ main :: IO ()
 main = do
         pipe <- connect (Host hostName portMongo)
         let settings = Warp.setPort portScotty Warp.defaultSettings
-        let wsApp    = gqlSocketApp subscriptionRoot
+        let wsApp    = gqlSocketApp $ gqlRoot pipe Nothing
         state   <- initGQLState
         httpApp <- sapp state pipe
         Warp.runSettings settings $ WaiWs.websocketsOr
@@ -60,14 +57,10 @@ main = do
         close pipe
 
 sapp :: GQLState IO USEREVENT -> Pipe -> IO Wai.Application
-sapp state pipe = scottyApp $ do
+sapp state pipe = scottyApp
     -- middleware logStdoutDev -- logging
     -- middleware $ jwt "TVwTQvknx0vaQE6mTlFJPB9VSbz5iPRS" -- JWT server secret, dont change !!! //TODO: put this in some global server env file
     --                 ["/user", "/lobby"] -- ignored routes for  authentication
-        post "/user" $ raw =<< (liftIO . userApi pipe =<< body)
-        post "/lobby" $ do
-                session <- getSession
-                raw =<< (liftIO . lobbyApi pipe session =<< body)
-        post "/sub" $ raw =<< (liftIO . subscriptionApi =<< body)
-
-
+                            post "/api" $ do
+        session <- getSession
+        raw =<< (liftIO . api pipe session =<< body)

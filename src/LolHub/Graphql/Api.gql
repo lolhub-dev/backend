@@ -1,0 +1,27 @@
+
+type Query {
+  helloWorld : String!
+}
+
+type Mutation {
+	register(
+	  username: String!
+	  firstname: String!,
+	  lastname: String!,
+	  email: String!
+	  password: String!
+	) : User!
+
+	login(
+	  username: String!
+	  password: String!
+	) : User!
+
+	create(kind: LobbyKind!): Lobby!,
+
+	join(lobby: String!, team: TeamColor!): Lobby!
+}
+
+type Subscription {
+	joined(lobby: String!): UserJoined!
+}

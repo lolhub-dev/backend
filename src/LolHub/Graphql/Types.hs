@@ -14,7 +14,6 @@
 
 module LolHub.Graphql.Types where
 
-import           Control.Concurrent.MonadIO       (MonadIO)
 import           Control.Monad.Trans.Class        (MonadTrans)
 import           Data.Morpheus.Document           (importGQLDocument)
 import           Data.Morpheus.Types              (Event (..), Resolver,
