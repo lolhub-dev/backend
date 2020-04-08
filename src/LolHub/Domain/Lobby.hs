@@ -4,10 +4,10 @@
 
 module LolHub.Domain.Lobby where
 
-import qualified LolHub.Domain.User as User
+import qualified LolHub.Domain.User            as User
 import           Data.Text
-import           Database.MongoDB (ObjectId)
-import           Data.Data (Typeable)
+import           Database.MongoDB               ( ObjectId )
+import           Data.Data                      ( Typeable )
 import           GHC.Generics
 import           Data.Bson.Mapping
 import           Control.Lens
@@ -24,7 +24,7 @@ $(deriveBson ''TeamColorE)
 
 $(makeLenses ''TeamColorE)
 
-opponent RED = BLUE
+opponent RED  = BLUE
 opponent BLUE = RED
 
 data TeamsE = TeamsE { _blueTeam :: TeamE, _redTeam :: TeamE }
@@ -66,31 +66,34 @@ $(deriveBson ''LobbyE)
 $(makeLenses ''LobbyE)
 
 createLobby :: LobbyKindE -> ObjectId -> User.UserE -> Maybe LobbyE
-createLobby kind oid creator = do
-  return
-    LobbyE { _id = oid
-           , _state = WAITING
-           , _kind = kind
-           , _creator = User._id creator
-           , _teams = TeamsE { _blueTeam = [], _redTeam = [] }
-           }
+createLobby kind oid creator = return LobbyE
+        { _id      = oid
+        , _state   = WAITING
+        , _kind    = kind
+        , _creator = User._id creator
+        , _teams   = TeamsE { _blueTeam = [], _redTeam = [] }
+        }
 
 joinLobby :: LobbyE -> User.UserE -> TeamColorE -> LobbyE
 joinLobby lobby user dreamTeam
-  | isInTeam dreamTeam = lobby
-  | isInTeam $ opponent dreamTeam =
-    (join dreamTeam . (leave $ opponent dreamTeam)) lobby
-  | otherwise = join dreamTeam lobby
-  where
-    color tc = if tc == BLUE
-               then blueTeam
-               else redTeam
+        | isInTeam dreamTeam = lobby
+        | isInTeam $ opponent dreamTeam = ( join dreamTeam
+                                          . leave (opponent dreamTeam)
+                                          )
+                lobby
+        | otherwise = join dreamTeam lobby
+    where
+        color tc = if tc == BLUE then blueTeam else redTeam
 
-    isInTeam :: TeamColorE -> Bool
-    isInTeam tc = anyOf (teams . color tc) (elem $ User._username user) lobby
+        isInTeam :: TeamColorE -> Bool
+        isInTeam tc =
+                anyOf (teams . color tc) (elem $ User._username user) lobby
 
-    join tc = over (teams . color tc) (User._username user:)
+        join tc = over (teams . color tc) (User._username user :)
 
-    leave tc = over
-      (teams . color tc)
-      (toListOf (folded . ifiltered (\_ x -> x /= User._username user)))
+        leave tc = over
+                (teams . color tc)
+                (toListOf
+                        (folded . ifiltered (\_ x -> x /= User._username user))
+                )
+

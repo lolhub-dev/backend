@@ -9,12 +9,16 @@ module Core.DB.MongoUtil
 where
 
 import           Control.Concurrent.MonadIO
-import           Control.Monad.Trans.Reader (mapReaderT)
+import           Control.Monad.Trans.Reader     ( mapReaderT )
 import           Data.Bson.Mapping
-import           Data.Data                  (Typeable)
-import           Database.MongoDB           (Action, Document, Pipe, access,
-                                             master)
-import           Database.MongoDB.Query     (Database)
+import           Data.Data                      ( Typeable )
+import           Database.MongoDB               ( Action
+                                                , Document
+                                                , Pipe
+                                                , access
+                                                , master
+                                                )
+import           Database.MongoDB.Query         ( Database )
 import           GHC.Generics
 
 -- | returns the DB name

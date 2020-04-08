@@ -4,19 +4,26 @@
 
 module LolHub.Domain.User where
 
-import           Control.Lens          (makeLenses)
-import           Data.Aeson            (FromJSON, ToJSON, Value, decode, encode)
+import           Control.Lens                   ( makeLenses )
+import           Data.Aeson                     ( FromJSON
+                                                , ToJSON
+                                                , Value
+                                                , decode
+                                                , encode
+                                                )
 import           Data.Bson.Mapping
-import           Data.Data             (Typeable)
-import qualified Data.Map.Strict       as Map
+import           Data.Data                      ( Typeable )
+import qualified Data.Map.Strict               as Map
 import           Data.Text
 import           Data.Time.Clock
-import           Data.Time.Clock.POSIX (POSIXTime)
-import           Database.MongoDB      (ObjectId)
-import           Debug.Trace           (traceId)
+import           Data.Time.Clock.POSIX          ( POSIXTime )
+import           Database.MongoDB               ( ObjectId )
+import           Debug.Trace                    ( traceId )
 import           GHC.Generics
-import           Prelude               hiding (exp, reverse)
-import qualified Web.JWT               as JWT
+import           Prelude                 hiding ( exp
+                                                , reverse
+                                                )
+import qualified Web.JWT                       as JWT
 
 
 data VerificationStatusE = UNVERIFIED | VERIFIED | SUMMONER_VERIFIED
@@ -57,7 +64,7 @@ secret = "TVwTQvknx0vaQE6mTlFJPB9VSbz5iPRS"
 
 createSession :: Text -> POSIXTime -> SessionE
 createSession username currTime =
-        SessionE { _uname = username, _iat = currTime, _exp = currTime + 1000 } -- //TODO: declare offset here"
+        SessionE { _uname = username, _iat = currTime, _exp = currTime + 1000 }
 
 decodeSession :: Text -> Maybe SessionE
 decodeSession token =
@@ -66,7 +73,6 @@ decodeSession token =
                 do
                         let mJwt = JWT.decodeAndVerifySignature key token
                         claims <- fmap JWT.claims mJwt
-                        pure $ traceId $ show claims
                         let
                                 unregisteredMap = JWT.unClaimsMap
                                         $ JWT.unregisteredClaims claims

@@ -20,31 +20,57 @@ module LolHub.Graphql.Api
         )
 where
 
-import           Control.Exception       (catch)
-import           Core.DB.MongoUtil       (run, (<<-))
+import           Control.Exception              ( catch )
+import           Core.DB.MongoUtil              ( run
+                                                , (<<-)
+                                                )
 import           Core.Exception
-import           Data.ByteString.Lazy    (ByteString)
+import           Data.ByteString.Lazy           ( ByteString )
 import           Data.Either.Utils
-import           Data.Morpheus           (interpreter)
-import           Data.Morpheus.Document  (importGQLDocumentWithNamespace)
-import           Data.Morpheus.Types     (Event (..), GQLRootResolver (..),
-                                          IOMutRes, IORes, MUTATION, QUERY,
-                                          ResolveM, ResolveQ, ResolveS,
-                                          Resolver (..), SUBSCRIPTION,
-                                          Undefined (..), constRes, lift,
-                                          liftEither, publish, subscribe)
-import           Data.Text               (Text, pack, unpack)
-import           Data.Time.Clock.POSIX   (getPOSIXTime)
-import qualified Database.MongoDB        as Mongo (Action, Failure, ObjectId,
-                                                   Pipe, Value, genObjectId)
-import qualified LolHub.DB.Lobby         as LobbyAction
-import qualified LolHub.DB.User          as UserAction
-import qualified LolHub.Domain.Lobby     as Lobby
-import qualified LolHub.Domain.User      as User
+import           Data.Morpheus                  ( interpreter )
+import           Data.Morpheus.Document         ( importGQLDocumentWithNamespace
+                                                )
+import           Data.Morpheus.Types            ( Event(..)
+                                                , GQLRootResolver(..)
+                                                , IOMutRes
+                                                , IORes
+                                                , MUTATION
+                                                , QUERY
+                                                , ResolveM
+                                                , ResolveQ
+                                                , ResolveS
+                                                , Resolver(..)
+                                                , SUBSCRIPTION
+                                                , Undefined(..)
+                                                , constRes
+                                                , lift
+                                                , liftEither
+                                                , publish
+                                                , subscribe
+                                                )
+import           Data.Text                      ( Text
+                                                , pack
+                                                , unpack
+                                                )
+import           Data.Time.Clock.POSIX          ( getPOSIXTime )
+import qualified Database.MongoDB              as Mongo
+                                                ( Action
+                                                , Failure
+                                                , ObjectId
+                                                , Pipe
+                                                , Value
+                                                , genObjectId
+                                                )
+import qualified LolHub.DB.Lobby               as LobbyAction
+import qualified LolHub.DB.User                as UserAction
+import qualified LolHub.Domain.Lobby           as Lobby
+import qualified LolHub.Domain.User            as User
 import           LolHub.Graphql.Resolver
 import           LolHub.Graphql.Types
-import           Text.Read               (readMaybe)
+import           Text.Read                      ( readMaybe )
+
 importGQLDocumentWithNamespace "src/LolHub/Graphql/Api.gql"
+
 api :: Mongo.Pipe -> Maybe User.SessionE -> ByteString -> IO ByteString
 api pipe session = interpreter $ gqlRoot pipe session
 
@@ -126,7 +152,7 @@ resolveRegisterUser pipe args = lift (resolveRegisterUser' pipe args)
                                         `catch` anyException
                         let user = resolveUser userE
                         return user
-      -- maybeToEither "Username already taken"
+        -- maybeToEither "Username already taken"
         -- $ result >> (Just user)
 resolveCreateLobby
         :: Maybe User.SessionE
@@ -163,7 +189,11 @@ resolveJoinLobby
         -> ResolveM USEREVENT IO Lobby
 resolveJoinLobby session pipe MutationJoinArgs { mutationJoinArgsLobby, mutationJoinArgsTeam }
         = do
-                publish [Event [USER] (Content { contentID = 12 })]
+                publish
+                        [ Event { channels = [USER]
+                                , content  = Content { contentID = 12 }
+                                }
+                        ]
                 liftEither
                         (resolveJoinLobby' session
                                            pipe
@@ -195,16 +225,16 @@ resolveJoinLobby session pipe MutationJoinArgs { mutationJoinArgsLobby, mutation
                         )
 
 ---- SUBSCRIPTIONS -----
+--
 resolveJoinedLobby
         :: Maybe User.SessionE
         -> Mongo.Pipe
         -> SubscriptionJoinedArgs
         -> ResolveS USEREVENT IO UserJoined
-resolveJoinedLobby session pipe args =
-        subscribe [USER] $ pure $ \(Event _ content) -> subResolver content
+resolveJoinedLobby session pipe args = subscribe [USER] $ pure subResolver
 
     where
-        subResolver content = lift (resolveJoinedLobby' content)
+        subResolver (Event [USER] content) = lift (resolveJoinedLobby' content)
         resolveJoinedLobby' :: Content -> IO (Object QUERY USEREVENT UserJoined)
         resolveJoinedLobby' content = return UserJoined
                 { username = return $ pack $ show $ contentID content
