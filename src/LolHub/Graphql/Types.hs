@@ -14,12 +14,15 @@
 
 module LolHub.Graphql.Types where
 
-import           Control.Monad.Trans.Class        (MonadTrans)
-import           Data.Morpheus.Document           (importGQLDocument)
-import           Data.Morpheus.Types              (Event (..), Resolver,
-                                                   WithOperation)
-import           Data.Morpheus.Types.Internal.AST (OperationType)
-import           Data.Text                        (Text)
+import           Control.Monad.Trans.Class      ( MonadTrans )
+import           Data.Morpheus.Document         ( importGQLDocument )
+import           Data.Morpheus.Types            ( Event(..)
+                                                , Resolver
+                                                , WithOperation
+                                                )
+import           Data.Morpheus.Types.Internal.AST
+                                                ( OperationType )
+import           Data.Text                      ( Text )
 
 importGQLDocument "src/LolHub/Graphql/Types.gql"
 
