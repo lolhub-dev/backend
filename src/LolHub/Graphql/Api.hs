@@ -1,4 +1,3 @@
-
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveGeneric         #-}
@@ -26,7 +25,7 @@ import           Core.DB.MongoUtil              ( run
                                                 )
 import           Core.Exception
 import           Data.ByteString.Lazy           ( ByteString )
-import           Data.Either.Utils
+import           Data.Either.Extra
 import           Data.Morpheus                  ( interpreter )
 import           Data.Morpheus.Document         ( importGQLDocumentWithNamespace
                                                 )
@@ -225,7 +224,7 @@ resolveJoinLobby session pipe MutationJoinArgs { mutationJoinArgsLobby, mutation
                         )
 
 ---- SUBSCRIPTIONS -----
---
+ --
 resolveJoinedLobby
         :: Maybe User.SessionE
         -> Mongo.Pipe

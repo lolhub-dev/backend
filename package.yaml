@@ -41,7 +41,8 @@ dependencies:
 - case-insensitive
 - word8
 - containers
-- MissingH
+- extra
+# - MissingH
 - lens
 - hspec
 - QuickCheck

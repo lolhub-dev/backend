@@ -21,9 +21,7 @@ import           Database.MongoDB               ( Action
                                                 , host
                                                 , master
                                                 )
-import           Database.MongoDB.Connection    ( Host(..)
-                                                , PortID
-                                                )
+import           Database.MongoDB.Connection    ( readHostPort )
 import qualified LolHub.Domain.User            as User
 import           LolHub.Graphql.Api             ( api
                                                 , gqlRoot
@@ -42,12 +40,10 @@ import           Web.Scotty
 -- | returns the port for Scotty
 portScotty = 3000
 -- | returns the port of the MongoDB
-portMongo :: PortID
-portMongo = 37017
 
 -- | returns the host IP for MongoDB
 hostName :: String
-hostName = "localhost"
+hostName = "localhost:37017"
 
 getSession = do
         token <- header "Authorization"
@@ -57,7 +53,7 @@ getSession = do
 
 main :: IO ()
 main = do
-        pipe <- connect (Host hostName portMongo)
+        pipe <- connect (readHostPort hostName)
         let settings = Warp.setPort portScotty Warp.defaultSettings
         let wsApp    = gqlSocketApp $ gqlRoot pipe Nothing
         state   <- initGQLState

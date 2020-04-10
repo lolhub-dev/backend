@@ -17,7 +17,7 @@
 #
 # resolver: ./custom-snapshot.yaml
 # resolver: https://example.com/snapshots/2018-01-01.yaml
-resolver: lts-14.8
+resolver: lts-15.3
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -67,4 +67,5 @@ packages:
 extra-deps:
   - morpheus-graphql-0.10.0
   - monadIO-0.11.1.0
-  - bson-mapping-0.1.5.1
+  - git: https://github.com/diskroma/bson-mapping.git
+    commit: 2829cbe567be2460a43340113862ef9002375258

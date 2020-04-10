@@ -29,13 +29,15 @@ run :: MonadIO m => Action m a -> Pipe -> m a
 run action pipe = access pipe master dbName action
 
 parseAction
-        :: (Bson a, Monad m, MonadIO io)
+        :: (Bson a, MonadFail m, MonadIO io)
         => Action io (m Document)
         -> Action io (m a)
 parseAction = mapReaderT maybeFromBson
     where
         maybeFromBson
-                :: (Bson a, Monad m, MonadIO io) => io (m Document) -> io (m a)
+                :: (Bson a, MonadFail m, MonadIO io)
+                => io (m Document)
+                -> io (m a)
         maybeFromBson a = (\b -> return (fromBson =<< b)) =<< a
 
 encodeAction
