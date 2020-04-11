@@ -153,6 +153,7 @@ resolveRegisterUser pipe args = lift (resolveRegisterUser' pipe args)
                         return user
         -- maybeToEither "Username already taken"
         -- $ result >> (Just user)
+
 resolveCreateLobby
         :: Maybe User.SessionE
         -> Mongo.Pipe
@@ -199,7 +200,6 @@ resolveJoinLobby session pipe MutationJoinArgs { mutationJoinArgsLobby, mutation
                                            mutationJoinArgsLobby
                                            mutationJoinArgsTeam
                         )
-
     where
         resolveJoinLobby'
                 :: Maybe User.SessionE
@@ -231,7 +231,6 @@ resolveJoinedLobby
         -> SubscriptionJoinedArgs
         -> ResolveS USEREVENT IO UserJoined
 resolveJoinedLobby session pipe args = subscribe [USER] $ pure subResolver
-
     where
         subResolver (Event [USER] content) = lift (resolveJoinedLobby' content)
         resolveJoinedLobby' :: Content -> IO (Object QUERY USEREVENT UserJoined)

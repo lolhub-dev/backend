@@ -8,16 +8,19 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 
-
 module LolHub.Graphql.Resolver where
 
-
-import           Data.Morpheus.Types  (Event (..), IOMutRes, IORes, Resolver,
-                                       WithOperation)
+import           Data.Morpheus.Types            ( Event(..)
+                                                , IOMutRes
+                                                , IORes
+                                                , Resolver
+                                                , WithOperation
+                                                )
 import           Data.Text
-import qualified LolHub.Domain.Lobby  as Lobby
-import qualified LolHub.Domain.User   as User
+import qualified LolHub.Domain.Lobby           as Lobby
+import qualified LolHub.Domain.User            as User
 import           LolHub.Graphql.Types
+
 toVerificationStatusE :: VerificationStatus -> User.VerificationStatusE
 toVerificationStatusE UNVERIFIED        = User.UNVERIFIED
 toVerificationStatusE VERIFIED          = User.VERIFIED
