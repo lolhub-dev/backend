@@ -14,6 +14,7 @@
 
 module LolHub.Graphql.Api
         ( api
+        ,subApi
         , gqlRoot
         , USEREVENT
         )
@@ -26,21 +27,18 @@ import           Core.DB.MongoUtil              ( run
 import           Core.Exception
 import           Data.ByteString.Lazy           ( ByteString )
 import           Data.Either.Extra
-import           Data.Morpheus                  ( interpreter )
+import           Data.Morpheus                  ( interpreter,  )
 import           Data.Morpheus.Document         ( importGQLDocumentWithNamespace
                                                 )
 import           Data.Morpheus.Types            ( Event(..)
-                                                , GQLRootResolver(..)
-                                                , IOMutRes
-                                                , IORes
+                                                , Input
+                                                , Stream
+                                                , RootResolver(..)
                                                 , MUTATION
                                                 , QUERY
-                                                , ResolveM
-                                                , ResolveQ
-                                                , ResolveS
-                                                , Resolver(..)
+                                                , ResolverM
+                                                , ResolverS
                                                 , SUBSCRIPTION
-                                                , Undefined(..)
                                                 , constRes
                                                 , lift
                                                 , liftEither
@@ -73,16 +71,19 @@ importGQLDocumentWithNamespace "src/LolHub/Graphql/Api.gql"
 api :: Mongo.Pipe -> Maybe User.SessionE -> ByteString -> IO ByteString
 api pipe session = interpreter $ gqlRoot pipe session
 
+subApi :: Mongo.Pipe -> Maybe User.SessionE -> Input api -> Stream api USEREVENT IO
+subApi pipe session= interpreter $ gqlRoot pipe session
+
 gqlRoot
         :: Mongo.Pipe
         -> Maybe User.SessionE
-        -> GQLRootResolver IO USEREVENT Undefined Mutation Subscription
-gqlRoot pipe session = GQLRootResolver { queryResolver
-                                       , mutationResolver
-                                       , subscriptionResolver
-                                       }
+        -> RootResolver IO USEREVENT Query Mutation Subscription
+gqlRoot pipe session = RootResolver { queryResolver
+                                    , mutationResolver
+                                    , subscriptionResolver
+                                    }
     where
-        queryResolver    = Undefined
+        queryResolver    = Query { queryHelloWorld = resolveHelloWorld }
         mutationResolver = Mutation
                 { mutationRegister = resolveRegisterUser pipe
                 , mutationCreate   = resolveCreateLobby session pipe
@@ -98,7 +99,7 @@ resolveHelloWorld = pure "helloWorld" -- //TODO: remove this, when there are oth
 
 ----- MUTATION RESOLVERS -----
 resolveLoginUser
-        :: Mongo.Pipe -> MutationLoginArgs -> ResolveM USEREVENT IO User
+        :: Mongo.Pipe -> MutationLoginArgs -> ResolverM USEREVENT IO User
 resolveLoginUser pipe MutationLoginArgs { mutationLoginArgsUsername, mutationLoginArgsPassword }
         = liftEither $ resolveLoginUser' pipe
                                          mutationLoginArgsUsername
@@ -117,7 +118,7 @@ resolveLoginUser pipe MutationLoginArgs { mutationLoginArgsUsername, mutationLog
                         <$> user
 
 resolveRegisterUser
-        :: Mongo.Pipe -> MutationRegisterArgs -> ResolveM USEREVENT IO User
+        :: Mongo.Pipe -> MutationRegisterArgs -> ResolverM USEREVENT IO User
 resolveRegisterUser pipe args = lift (resolveRegisterUser' pipe args)
     where
         resolveRegisterUser'
@@ -158,7 +159,7 @@ resolveCreateLobby
         :: Maybe User.SessionE
         -> Mongo.Pipe
         -> MutationCreateArgs
-        -> ResolveM USEREVENT IO Lobby
+        -> ResolverM USEREVENT IO Lobby
 resolveCreateLobby session pipe args = liftEither
         (resolveCreateLobby' session pipe args)
     where
@@ -186,7 +187,7 @@ resolveJoinLobby
         :: Maybe User.SessionE
         -> Mongo.Pipe
         -> MutationJoinArgs
-        -> ResolveM USEREVENT IO Lobby
+        -> ResolverM USEREVENT IO Lobby
 resolveJoinLobby session pipe MutationJoinArgs { mutationJoinArgsLobby, mutationJoinArgsTeam }
         = do
                 publish
@@ -224,12 +225,12 @@ resolveJoinLobby session pipe MutationJoinArgs { mutationJoinArgsLobby, mutation
                         )
 
 ---- SUBSCRIPTIONS -----
- --
+--
 resolveJoinedLobby
         :: Maybe User.SessionE
         -> Mongo.Pipe
         -> SubscriptionJoinedArgs
-        -> ResolveS USEREVENT IO UserJoined
+        -> ResolverS USEREVENT IO UserJoined
 resolveJoinedLobby session pipe args = subscribe [USER] $ pure subResolver
     where
         subResolver (Event [USER] content) = lift (resolveJoinedLobby' content)

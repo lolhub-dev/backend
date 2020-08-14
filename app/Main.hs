@@ -6,12 +6,12 @@ import           Control.Concurrent
 import           Control.Monad.IO.Class
 import           Core.Network.Wai.Middleware.JWT
 import           Data.Maybe
-import           Data.Morpheus.Server           ( GQLState
-                                                , gqlSocketApp
-                                                , initGQLState
-                                                )
 import qualified Data.Text                     as Text
 import           Data.Text.Lazy                 ( toStrict )
+import           Data.Morpheus.Types            ( RootResolver )
+import           Data.Morpheus.Server           ( webSocketsApp )
+import           Data.ByteString.Lazy           ( ByteString )
+import           LolHub.Graphql.Types           ( USEREVENT )
 import           Database.MongoDB               ( Action
                                                 , Document
                                                 , Pipe
@@ -24,15 +24,19 @@ import           Database.MongoDB               ( Action
 import           Database.MongoDB.Connection    ( readHostPort )
 import qualified LolHub.Domain.User            as User
 import           LolHub.Graphql.Api             ( api
+                                                , subApi
                                                 , gqlRoot
                                                 )
 import           LolHub.Graphql.Types
-import qualified Network.Wai                   as Wai
-import qualified Network.Wai.Handler.Warp      as Warp
-import qualified Network.Wai.Handler.WebSockets
-                                               as WaiWs
 import           Network.Wai.Middleware.RequestLogger
-import           Network.WebSockets             ( defaultConnectionOptions )
+import           Network.Wai.Handler.Warp       ( defaultSettings
+                                                , runSettings
+                                                , setPort
+                                                )
+import           Network.Wai.Handler.WebSockets ( websocketsOr )
+import           Network.WebSockets             ( ServerApp
+                                                , defaultConnectionOptions
+                                                )
 
 import           System.Exit
 import           Web.Scotty
@@ -54,17 +58,32 @@ getSession = do
 main :: IO ()
 main = do
         pipe <- connect (readHostPort hostName)
-        let settings = Warp.setPort portScotty Warp.defaultSettings
-        let wsApp    = gqlSocketApp $ gqlRoot pipe Nothing
-        state   <- initGQLState
-        httpApp <- sapp state pipe
-        Warp.runSettings settings $ WaiWs.websocketsOr
-                defaultConnectionOptions
-                (wsApp state)
-                httpApp
+        scottyServer pipe
         close pipe
 
-sapp :: GQLState IO USEREVENT -> Pipe -> IO Wai.Application
-sapp state pipe = scottyApp $ post "/" $ do
-        session <- getSession
-        raw =<< (liftIO . api pipe session =<< body)
+-- sapp :: GQLState IO USEREVENT -> Pipe -> IO Wai.Application
+-- sapp state pipe = scottyApp $ post "/" $ do
+        -- session <- getSession
+        -- raw =<< (liftIO . api pipe session =<< body)
+
+scottyServer :: Pipe -> IO ()
+scottyServer pipe = do
+        (wsApp, publish) <- webSocketsApp $ subApi pipe Nothing
+        startServer wsApp (httpEndpoint "/" api pipe )
+
+httpEndpoint
+        :: RoutePattern
+        -> (Pipe-> Maybe User.SessionE ->ByteString -> IO ByteString)
+        -> Pipe
+        -> ScottyM ()
+httpEndpoint route api pipe = do
+        post route $ do
+                session <- getSession
+                raw =<< (liftIO . api pipe session=<< body)
+
+startServer :: ServerApp -> ScottyM () -> IO ()
+startServer wsApp app = do
+        httpApp <- scottyApp app
+        runSettings settings
+                $ websocketsOr defaultConnectionOptions wsApp httpApp
+        where settings = setPort portScotty defaultSettings
