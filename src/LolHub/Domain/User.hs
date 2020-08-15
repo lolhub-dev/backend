@@ -14,7 +14,11 @@ import           Data.Aeson                     ( FromJSON
 import           Data.Bson.Mapping
 import           Data.Data                      ( Typeable )
 import qualified Data.Map.Strict               as Map
-import           Data.Text
+import           Data.Text                     as Text
+import qualified Data.Text.Lazy                as Lazy
+                                                ( toStrict
+                                                , Text
+                                                )
 import           Data.Time.Clock
 import           Data.Time.Clock.POSIX          ( POSIXTime )
 import           Database.MongoDB               ( ObjectId )
@@ -108,3 +112,6 @@ encodeSession session =
                 key = JWT.hmacSecret secret
         in
                 JWT.encodeSigned key mempty cs
+
+parseAuthHeader :: Lazy.Text -> Text
+parseAuthHeader = (!! 1) . Text.words . Lazy.toStrict

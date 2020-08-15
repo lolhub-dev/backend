@@ -4,23 +4,23 @@ type Query {
 }
 
 type Mutation {
-	register(
-	  username: String!
-	  firstname: String!,
-	  lastname: String!,
-	  email: String!
-	  password: String!
-	) : User!
-	login(
-	  username: String!
-	  password: String!
-	) : User!
+      register(
+        username: String!
+        firstname: String!,
+        lastname: String!,
+        email: String!
+        password: String!
+      ) : User!
+      login(
+        username: String!
+        password: String!
+      ) : User!
 
-	create(kind: LobbyKind!): Lobby!,
+      create(kind: LobbyKind!): Lobby!,
 
-	join(lobby: String!, team: TeamColor!): Lobby!
+      join(lobby: String!, team: TeamColor!): Lobby!
 }
 
 type Subscription {
-	joined(lobby: String!): UserJoined!
+      joined(lobby: String!): UserJoined!
 }

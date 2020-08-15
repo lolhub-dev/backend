@@ -53,7 +53,7 @@ fromTeamColorE tcE = case tcE of
         Lobby.RED  -> RED
         Lobby.BLUE -> BLUE
 
-resolveUser :: (WithOperation o) => User.UserE -> Object o USEREVENT User
+resolveUser :: (WithOperation o) => User.UserE -> Object o UserEvent User
 resolveUser user = User
         { username  = pure $ User._username user
         , firstname = pure $ User._firstname user
@@ -64,17 +64,17 @@ resolveUser user = User
         }
 
 resolveUserInfo
-        :: (WithOperation o) => User.UserE -> Object o USEREVENT UserInfo
+        :: (WithOperation o) => User.UserE -> Object o UserEvent UserInfo
 resolveUserInfo user = UserInfo { username  = pure $ User._username user
                                 , firstname = pure $ User._firstname user
                                 , lastname  = pure $ User._lastname user
                                 }
 
-resolveTeam :: (WithOperation o) => Lobby.TeamE -> Object o USEREVENT Team
+resolveTeam :: (WithOperation o) => Lobby.TeamE -> Object o UserEvent Team
 resolveTeam teamE = Team { members = pure m }
         where m = fmap (pack . show) teamE :: [Text]
 
-resolveTeams :: (WithOperation o) => Lobby.TeamsE -> Object o USEREVENT Teams
+resolveTeams :: (WithOperation o) => Lobby.TeamsE -> Object o UserEvent Teams
 resolveTeams teamsE = Teams
         { blueTeam = pure $ resolveTeam $ Lobby._blueTeam teamsE
         , redTeam  = pure $ resolveTeam $ Lobby._redTeam teamsE
@@ -84,7 +84,7 @@ resolveLobby
         :: (WithOperation o)
         => Lobby.LobbyE
         -> User.UserE
-        -> Object o USEREVENT Lobby
+        -> Object o UserEvent Lobby
 resolveLobby lobbyE userE = Lobby { _id     = lid
                                   , state   = ls
                                   , creator = lc

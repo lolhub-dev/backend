@@ -14,9 +14,9 @@
 
 module LolHub.Graphql.Api
         ( api
-        ,subApi
+        , subApi
         , gqlRoot
-        , USEREVENT
+        , UserEvent
         )
 where
 
@@ -27,7 +27,7 @@ import           Core.DB.MongoUtil              ( run
 import           Core.Exception
 import           Data.ByteString.Lazy           ( ByteString )
 import           Data.Either.Extra
-import           Data.Morpheus                  ( interpreter,  )
+import           Data.Morpheus                  ( interpreter )
 import           Data.Morpheus.Document         ( importGQLDocumentWithNamespace
                                                 )
 import           Data.Morpheus.Types            ( Event(..)
@@ -44,6 +44,7 @@ import           Data.Morpheus.Types            ( Event(..)
                                                 , liftEither
                                                 , publish
                                                 , subscribe
+                                                , SubscriptionField
                                                 )
 import           Data.Text                      ( Text
                                                 , pack
@@ -71,13 +72,17 @@ importGQLDocumentWithNamespace "src/LolHub/Graphql/Api.gql"
 api :: Mongo.Pipe -> Maybe User.SessionE -> ByteString -> IO ByteString
 api pipe session = interpreter $ gqlRoot pipe session
 
-subApi :: Mongo.Pipe -> Maybe User.SessionE -> Input api -> Stream api USEREVENT IO
-subApi pipe session= interpreter $ gqlRoot pipe session
+subApi
+        :: Mongo.Pipe
+        -> Maybe User.SessionE
+        -> Input api
+        -> Stream api UserEvent IO
+subApi pipe session = interpreter $ gqlRoot pipe session
 
 gqlRoot
         :: Mongo.Pipe
         -> Maybe User.SessionE
-        -> RootResolver IO USEREVENT Query Mutation Subscription
+        -> RootResolver IO UserEvent Query Mutation Subscription
 gqlRoot pipe session = RootResolver { queryResolver
                                     , mutationResolver
                                     , subscriptionResolver
@@ -94,12 +99,12 @@ gqlRoot pipe session = RootResolver { queryResolver
                 { subscriptionJoined = resolveJoinedLobby session pipe
                 }
 ----- QUERY RESOLVERS -----
-resolveHelloWorld :: Value QUERY Text USEREVENT
+resolveHelloWorld :: Value QUERY Text UserEvent
 resolveHelloWorld = pure "helloWorld" -- //TODO: remove this, when there are other queries
 
 ----- MUTATION RESOLVERS -----
 resolveLoginUser
-        :: Mongo.Pipe -> MutationLoginArgs -> ResolverM USEREVENT IO User
+        :: Mongo.Pipe -> MutationLoginArgs -> ResolverM UserEvent IO User
 resolveLoginUser pipe MutationLoginArgs { mutationLoginArgsUsername, mutationLoginArgsPassword }
         = liftEither $ resolveLoginUser' pipe
                                          mutationLoginArgsUsername
@@ -109,7 +114,7 @@ resolveLoginUser pipe MutationLoginArgs { mutationLoginArgsUsername, mutationLog
                 :: Mongo.Pipe
                 -> Text
                 -> Text
-                -> IO (EitherObject MUTATION USEREVENT String User)
+                -> IO (EitherObject MUTATION UserEvent String User)
         resolveLoginUser' pipe uname pword = do
                 user <- run (UserAction.loginUser uname pword) pipe
                 return
@@ -118,13 +123,13 @@ resolveLoginUser pipe MutationLoginArgs { mutationLoginArgsUsername, mutationLog
                         <$> user
 
 resolveRegisterUser
-        :: Mongo.Pipe -> MutationRegisterArgs -> ResolverM USEREVENT IO User
+        :: Mongo.Pipe -> MutationRegisterArgs -> ResolverM UserEvent IO User
 resolveRegisterUser pipe args = lift (resolveRegisterUser' pipe args)
     where
         resolveRegisterUser'
                 :: Mongo.Pipe
                 -> MutationRegisterArgs
-                -> IO (Object MUTATION USEREVENT User)
+                -> IO (Object MUTATION UserEvent User)
         resolveRegisterUser' pipe MutationRegisterArgs { mutationRegisterArgsUsername, mutationRegisterArgsFirstname, mutationRegisterArgsLastname, mutationRegisterArgsEmail, mutationRegisterArgsPassword }
                 = do
                         oid      <- Mongo.genObjectId
@@ -159,7 +164,7 @@ resolveCreateLobby
         :: Maybe User.SessionE
         -> Mongo.Pipe
         -> MutationCreateArgs
-        -> ResolverM USEREVENT IO Lobby
+        -> ResolverM UserEvent IO Lobby
 resolveCreateLobby session pipe args = liftEither
         (resolveCreateLobby' session pipe args)
     where
@@ -167,7 +172,7 @@ resolveCreateLobby session pipe args = liftEither
                 :: Maybe User.SessionE
                 -> Mongo.Pipe
                 -> MutationCreateArgs
-                -> IO (EitherObject MUTATION USEREVENT String Lobby)
+                -> IO (EitherObject MUTATION UserEvent String Lobby)
         resolveCreateLobby' session pipe args = do
                 oid <- Mongo.genObjectId
                 let uname = User._uname <$> session
@@ -187,11 +192,11 @@ resolveJoinLobby
         :: Maybe User.SessionE
         -> Mongo.Pipe
         -> MutationJoinArgs
-        -> ResolverM USEREVENT IO Lobby
+        -> ResolverM UserEvent IO Lobby
 resolveJoinLobby session pipe MutationJoinArgs { mutationJoinArgsLobby, mutationJoinArgsTeam }
         = do
                 publish
-                        [ Event { channels = [USER]
+                        [ Event { channels = [UserChannel]
                                 , content  = Content { contentID = 12 }
                                 }
                         ]
@@ -207,7 +212,7 @@ resolveJoinLobby session pipe MutationJoinArgs { mutationJoinArgsLobby, mutation
                 -> Mongo.Pipe
                 -> Text
                 -> TeamColor
-                -> IO (EitherObject MUTATION USEREVENT String Lobby)
+                -> IO (EitherObject MUTATION UserEvent String Lobby)
         resolveJoinLobby' session pipe lobbyId tc = do
                 let uname = User._uname <$> session
                 user <- run (UserAction.getUserByName <<- uname) pipe
@@ -230,11 +235,11 @@ resolveJoinedLobby
         :: Maybe User.SessionE
         -> Mongo.Pipe
         -> SubscriptionJoinedArgs
-        -> ResolverS USEREVENT IO UserJoined
-resolveJoinedLobby session pipe args = subscribe [USER] $ pure subResolver
+        -> SubscriptionField (ResolverS UserEvent IO UserJoined)
+resolveJoinedLobby session pipe args = subscribe UserChannel $ do
+        pure resolveJoinedLobby'
     where
-        subResolver (Event [USER] content) = lift (resolveJoinedLobby' content)
-        resolveJoinedLobby' :: Content -> IO (Object QUERY USEREVENT UserJoined)
-        resolveJoinedLobby' content = return UserJoined
-                { username = return $ pack $ show $ contentID content
-                }
+        resolveJoinedLobby'
+                :: Event Channel Content -> (ResolverS UserEvent IO UserJoined)
+        resolveJoinedLobby' (Event [UserChannel] (Content content)) =
+                pure UserJoined { username = return $ pack $ show content }

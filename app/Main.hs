@@ -11,7 +11,6 @@ import           Data.Text.Lazy                 ( toStrict )
 import           Data.Morpheus.Types            ( RootResolver )
 import           Data.Morpheus.Server           ( webSocketsApp )
 import           Data.ByteString.Lazy           ( ByteString )
-import           LolHub.Graphql.Types           ( USEREVENT )
 import           Database.MongoDB               ( Action
                                                 , Document
                                                 , Pipe
@@ -41,19 +40,17 @@ import           Network.WebSockets             ( ServerApp
 import           System.Exit
 import           Web.Scotty
 
--- | returns the port for Scotty
+-- | port for Scotty
 portScotty = 3000
--- | returns the port of the MongoDB
 
--- | returns the host IP for MongoDB
+-- | host IP for MongoDB
 hostName :: String
-hostName = "localhost:37017"
+hostName = "localhost:27017"
 
+getSession :: ActionM (Maybe User.SessionE)
 getSession = do
         token <- header "Authorization"
-        return
-                $   User.decodeSession
-                =<< ((!! 1) <$> (Text.words <$> (toStrict <$> token))) -- parse away Bearer prefix
+        return $ User.parseAuthHeader <$> token >>= User.decodeSession-- parse away Bearer prefix
 
 main :: IO ()
 main = do
@@ -61,25 +58,19 @@ main = do
         scottyServer pipe
         close pipe
 
--- sapp :: GQLState IO USEREVENT -> Pipe -> IO Wai.Application
--- sapp state pipe = scottyApp $ post "/" $ do
-        -- session <- getSession
-        -- raw =<< (liftIO . api pipe session =<< body)
-
 scottyServer :: Pipe -> IO ()
 scottyServer pipe = do
         (wsApp, publish) <- webSocketsApp $ subApi pipe Nothing
-        startServer wsApp (httpEndpoint "/" api pipe )
+        startServer wsApp (httpEndpoint "/" api pipe)
 
 httpEndpoint
         :: RoutePattern
-        -> (Pipe-> Maybe User.SessionE ->ByteString -> IO ByteString)
+        -> (Pipe -> Maybe User.SessionE -> ByteString -> IO ByteString)
         -> Pipe
         -> ScottyM ()
-httpEndpoint route api pipe = do
-        post route $ do
-                session <- getSession
-                raw =<< (liftIO . api pipe session=<< body)
+httpEndpoint route api pipe = post route $ do
+        session <- getSession
+        raw =<< (liftIO . api pipe session =<< body)
 
 startServer :: ServerApp -> ScottyM () -> IO ()
 startServer wsApp app = do

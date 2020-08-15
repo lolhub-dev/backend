@@ -41,9 +41,9 @@ type OptionalObject (o :: OperationType) e a = Maybe (Object o e a)
 --
 type EitherObject (o :: OperationType) e a b = Either a (Object o e b)
 
-data Channel = USER
+data Channel = UserChannel
   deriving (Show, Eq, Ord)
 
 newtype Content = Content { contentID :: Int }
 
-type USEREVENT = (Event Channel Content)
+type UserEvent = Event Channel Content
