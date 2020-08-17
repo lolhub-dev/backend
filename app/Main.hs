@@ -8,6 +8,7 @@ import           Core.Network.Wai.Middleware.JWT
 import           Data.Maybe
 import qualified Data.Text                     as Text
 import           Data.Text.Lazy                 ( toStrict )
+import           Data.Text.Lazy.Builder
 import           Data.Morpheus.Types            ( RootResolver )
 import           Data.Morpheus.Server           ( webSocketsApp )
 import           Data.ByteString.Lazy           ( ByteString )
@@ -50,7 +51,7 @@ hostName = "localhost:27017"
 getSession :: ActionM (Maybe User.SessionE)
 getSession = do
         token <- header "Authorization"
-        return $ User.parseAuthHeader <$> token >>= User.decodeSession-- parse away Bearer prefix
+        return $ User.decodeSession . User.parseAuthHeader =<< token   -- parse away Bearer prefix
 
 main :: IO ()
 main = do
@@ -61,7 +62,7 @@ main = do
 scottyServer :: Pipe -> IO ()
 scottyServer pipe = do
         (wsApp, publish) <- webSocketsApp $ subApi pipe Nothing
-        startServer wsApp (httpEndpoint "/" api pipe)
+        startServer wsApp $ httpEndpoint "/" api pipe
 
 httpEndpoint
         :: RoutePattern

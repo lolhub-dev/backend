@@ -81,16 +81,13 @@ resolveTeams teamsE = Teams
         }
 
 resolveLobby
-        :: (WithOperation o)
-        => Lobby.LobbyE
-        -> User.UserE
-        -> Object o UserEvent Lobby
-resolveLobby lobbyE userE = Lobby { _id     = lid
-                                  , state   = ls
-                                  , creator = lc
-                                  , teams   = lt
-                                  , kind    = lk
-                                  }
+        :: (WithOperation o) => Lobby.LobbyE -> Text -> Object o UserEvent Lobby
+resolveLobby lobbyE creator = Lobby { _id     = lid
+                                    , state   = ls
+                                    , creator = lc
+                                    , teams   = lt
+                                    , kind    = lk
+                                    }
     where
         lid = pure $ pack $ show $ Lobby._id lobbyE
 
@@ -100,7 +97,7 @@ resolveLobby lobbyE userE = Lobby { _id     = lid
                 Lobby.FULL    -> FULL
                 Lobby.WAITING -> WAITING
 
-        lc = pure $ resolveUserInfo userE
+        lc = pure $ creator
 
         lt = pure $ resolveTeams $ Lobby._teams lobbyE
 

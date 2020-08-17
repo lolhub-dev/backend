@@ -175,9 +175,8 @@ resolveCreateLobby session pipe args = liftEither
                 -> IO (EitherObject MUTATION UserEvent String Lobby)
         resolveCreateLobby' session pipe args = do
                 oid <- Mongo.genObjectId
-                let uname = User._uname <$> session
-                creator <- run (UserAction.getUserByName <<- uname) pipe
-                let lobby = Lobby.createLobby lobbyKind oid =<< creator
+                let creator = User._uname <$> session
+                let lobby   = Lobby.createLobby lobbyKind oid =<< creator
                 run (LobbyAction.insertLobby <<- lobby) pipe
                 return
                         (   maybeToEither "Invalid Session"
@@ -196,9 +195,12 @@ resolveJoinLobby
 resolveJoinLobby session pipe MutationJoinArgs { mutationJoinArgsLobby, mutationJoinArgsTeam }
         = do
                 publish
-                        [ Event { channels = [UserChannel]
-                                , content  = Content { contentID = 12 }
-                                }
+                        [ Event
+                                  { channels = [UserChannel]
+                                  , content  = Content { lobbyId  = "test1234"
+                                                       , username = "test"
+                                                       }
+                                  }
                         ]
                 liftEither
                         (resolveJoinLobby' session
@@ -226,7 +228,7 @@ resolveJoinLobby session pipe MutationJoinArgs { mutationJoinArgsLobby, mutation
                         (   maybeToEither "Invalid Session"
                         $   resolveLobby
                         <$> lobby'
-                        <*> user
+                        <*> (User._username <$> user)
                         )
 
 ---- SUBSCRIPTIONS -----
@@ -236,10 +238,9 @@ resolveJoinedLobby
         -> Mongo.Pipe
         -> SubscriptionJoinedArgs
         -> SubscriptionField (ResolverS UserEvent IO UserJoined)
-resolveJoinedLobby session pipe args = subscribe UserChannel $ do
-        pure resolveJoinedLobby'
+resolveJoinedLobby session pipe args = subscribe UserChannel
+        $ pure resolveJoinedLobby'
     where
         resolveJoinedLobby'
-                :: Event Channel Content -> (ResolverS UserEvent IO UserJoined)
-        resolveJoinedLobby' (Event [UserChannel] (Content content)) =
-                pure UserJoined { username = return $ pack $ show content }
+                :: Event Channel Content -> ResolverS UserEvent IO UserJoined
+        resolveJoinedLobby' _ = pure UserJoined { username = return "test" }

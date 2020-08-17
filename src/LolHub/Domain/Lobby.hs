@@ -56,7 +56,7 @@ $(makeLenses ''LobbyKindE)
 data LobbyE = LobbyE { _id :: ObjectId
                      , _state :: LobbyStateE
                      , _kind :: LobbyKindE
-                     , _creator :: ObjectId
+                     , _creator :: Text
                      , _teams :: TeamsE
                      }
   deriving (Generic, Typeable, Show, Read, Eq, Ord)
@@ -65,12 +65,12 @@ $(deriveBson ''LobbyE)
 
 $(makeLenses ''LobbyE)
 
-createLobby :: LobbyKindE -> ObjectId -> User.UserE -> Maybe LobbyE
+createLobby :: LobbyKindE -> ObjectId -> Text -> Maybe LobbyE
 createLobby kind oid creator = return LobbyE
         { _id      = oid
         , _state   = WAITING
         , _kind    = kind
-        , _creator = User._id creator
+        , _creator = creator
         , _teams   = TeamsE { _blueTeam = [], _redTeam = [] }
         }
 

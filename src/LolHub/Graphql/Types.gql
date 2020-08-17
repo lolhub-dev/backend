@@ -31,7 +31,7 @@ type Lobby {
 	_id: String!
 	state: LobbyState!
 	kind: LobbyKind!
-	creator: UserInfo!
+	creator: String!
 	teams: Teams!
 }
 

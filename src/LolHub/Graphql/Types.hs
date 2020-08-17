@@ -44,6 +44,7 @@ type EitherObject (o :: OperationType) e a b = Either a (Object o e b)
 data Channel = UserChannel
   deriving (Show, Eq, Ord)
 
-newtype Content = Content { contentID :: Int }
+data Content = Content { lobbyId :: Text,
+                         username ::Text}
 
 type UserEvent = Event Channel Content
