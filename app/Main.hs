@@ -69,9 +69,11 @@ httpEndpoint
         -> (Pipe -> Maybe User.SessionE -> ByteString -> IO ByteString)
         -> Pipe
         -> ScottyM ()
-httpEndpoint route api pipe = post route $ do
-        session <- getSession
-        raw =<< (liftIO . api pipe session =<< body)
+httpEndpoint route api pipe = do
+        middleware logStdoutDev -- logging
+        post route $ do
+                session <- getSession
+                raw =<< (liftIO . api pipe session =<< body)
 
 startServer :: ServerApp -> ScottyM () -> IO ()
 startServer wsApp app = do
