@@ -23,10 +23,14 @@ dependencies:
 - base >= 4.7 && < 5
 - text
 - bytestring
+- morpheus-graphql-core
 - morpheus-graphql
 - mongoDB
 - mtl
 - wai-extra
+- wai-websockets
+- websockets
+- warp
 - monadIO
 - bson-mapping
 - transformers
@@ -38,7 +42,11 @@ dependencies:
 - case-insensitive
 - word8
 - containers
-- MissingH
+- extra
+# - MissingH
+- lens
+- hspec
+- QuickCheck
 
 library:
   source-dirs: src
@@ -65,5 +73,3 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - backend
-    - hspec
-    - QuickCheck
